@@ -10,5 +10,37 @@ API'nin sorumlulukları:
 - Celery görevlerini başlatmak,
 - analiz durumu ve benzerlik sonuçlarını web uygulamasına sunmak.
 
-Sonraki adımda burada temel FastAPI uygulaması ve `/health` endpoint'i
-oluşturulacaktır.
+## Yerel çalıştırma
+
+API klasöründe sanal ortamı oluşturup geliştirme bağımlılıklarını yükleyin:
+
+```powershell
+cd apps/api
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+Uygulamayı başlatın:
+
+```powershell
+uvicorn intihal_api.main:app --app-dir src --reload
+```
+
+Kullanılabilir adresler:
+
+- `GET http://127.0.0.1:8000/health`
+- `GET http://127.0.0.1:8000/api/v1/health`
+- `http://127.0.0.1:8000/docs` (OpenAPI arayüzü)
+
+Testleri çalıştırın:
+
+```powershell
+pytest
+```
+
+## Ayarlar
+
+Uygulama ayarları `INTIHAL_` önekli ortam değişkenlerinden okunur. Yerel
+geliştirmede `.env.example` dosyasını `.env` adıyla kopyalayıp değerleri
+değiştirebilirsiniz. `.env` Git tarafından takip edilmez.
