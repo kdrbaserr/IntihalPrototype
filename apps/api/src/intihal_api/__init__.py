@@ -1,0 +1,1 @@
+"""İntihal Prototype API package."""
