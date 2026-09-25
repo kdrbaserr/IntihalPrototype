@@ -17,12 +17,24 @@ dependencies = [
 dev = [
     "httpx>=0.28,<1.0",
     "pytest>=8.4,<9.0",
+    "ruff==0.16.9",
 ]
 
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
 
 [tool.setuptools.packages.find]
 where = ["src"]

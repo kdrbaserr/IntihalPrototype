@@ -22,7 +22,7 @@ export default function HomePage() {
       <section className="hero" aria-labelledby="hero-title">
         <div className="eyebrow">Açıklanabilir · Güvenli · Ölçülebilir</div>
         <h1 id="hero-title">
-          Metin benzerliğini
+          Metin benzerliğini{" "}
           <span>kanıtlarıyla incele.</span>
         </h1>
         <p className="hero-copy">

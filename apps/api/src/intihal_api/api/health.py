@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from intihal_api.core.config import Settings, get_settings
 
-
 router = APIRouter(tags=["health"])
 
 

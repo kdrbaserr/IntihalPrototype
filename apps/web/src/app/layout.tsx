@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import "./globals.css";
@@ -22,7 +23,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body>
         <div className="site-shell">
           <header className="site-header">
-            <a className="brand" href="/" aria-label="İntihal Prototype ana sayfa">
+            <Link className="brand" href="/" aria-label="İntihal Prototype ana sayfa">
               <span className="brand-mark" aria-hidden="true">
                 İP
               </span>
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <strong>İntihal Prototype</strong>
                 <small>Doküman Benzerlik Sistemi</small>
               </span>
-            </a>
+            </Link>
 
             <span className="status-badge">
               <span className="status-dot" aria-hidden="true" />
