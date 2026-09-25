@@ -22,6 +22,15 @@ npm run dev
 
 Ardından `http://localhost:3000` adresini açın.
 
+Docker ile bütün proje servislerini başlatmak için proje kökünden:
+
+```powershell
+docker compose up -d --build
+```
+
+Web kaynak kodu container'a bind volume olarak bağlanır. Next.js geliştirme
+sunucusu dosya değişikliklerini algılayıp tarayıcıyı yeniler.
+
 ## Komutlar
 
 - `npm run dev`: geliştirme sunucusunu başlatır.

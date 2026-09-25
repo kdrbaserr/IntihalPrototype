@@ -34,10 +34,18 @@ docker compose ps
 
 Servis adresleri:
 
+- Web uygulaması: `http://localhost:3000`
+- FastAPI: `http://localhost:8000`
+- FastAPI Swagger: `http://localhost:8000/docs`
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 - MinIO S3 API: `http://localhost:9000`
 - MinIO yönetim ekranı: `http://localhost:9001`
+
+API ve Web geliştirme container'ları kaynak kod klasörlerini salt okunur bind
+volume olarak bağlar. Böylece yerel dosya değişiklikleri container yeniden
+oluşturulmadan canlı yenilemeyle uygulanır. Next.js derleme önbelleği
+`web_next_cache` adlı Docker volume'unda tutulur.
 
 Logları canlı izlemek için:
 

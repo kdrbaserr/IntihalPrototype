@@ -39,6 +39,17 @@ Testleri çalıştırın:
 pytest
 ```
 
+## Docker ile çalıştırma
+
+Proje kökünden bütün servislerle birlikte çalıştırın:
+
+```powershell
+docker compose up -d --build
+```
+
+API kaynak kodu geliştirme container'ına bind volume olarak bağlanır. Uvicorn
+değişiklikleri algılar ve uygulamayı otomatik olarak yeniden yükler.
+
 ## Ayarlar
 
 Uygulama ayarları `INTIHAL_` önekli ortam değişkenlerinden okunur. Yerel
