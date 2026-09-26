@@ -8,8 +8,10 @@ version = "0.1.0"
 description = "Doküman Benzerlik Tespit Sistemi API"
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg>=0.30,<1.0",
     "fastapi>=0.116,<1.0",
     "pydantic-settings>=2.10,<3.0",
+    "sqlalchemy[asyncio]>=2.0.43,<3.0",
     "uvicorn[standard]>=0.35,<1.0",
 ]
 

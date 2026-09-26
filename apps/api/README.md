@@ -55,3 +55,21 @@ değişiklikleri algılar ve uygulamayı otomatik olarak yeniden yükler.
 Uygulama ayarları `INTIHAL_` önekli ortam değişkenlerinden okunur. Yerel
 geliştirmede `.env.example` dosyasını `.env` adıyla kopyalayıp değerleri
 değiştirebilirsiniz. `.env` Git tarafından takip edilmez.
+
+## Veritabanı oturumu ve ortak model alanları
+
+API, SQLAlchemy'nin async motorunu ve `asyncpg` PostgreSQL sürücüsünü kullanır.
+Bu tercih `intihal_api.db.session` içinde merkezî olarak tanımlıdır; yeni kodda
+ayrı bir senkron motor veya oturum oluşturulmamalıdır. `get_db_session`, her API
+isteğine ayrı bir oturum verir ve hata halinde yarım kalan işlemi geri alır.
+
+Kalıcı modeller `BaseModel` sınıfını miras alır. Bu soyut temel sınıf,
+aşağıdaki iki mixin'i bütün modellere birlikte kazandırır:
+
+- `UUIDPrimaryKeyMixin`: Uygulama tarafında üretilen benzersiz `id` alanını ekler.
+- `TimestampMixin`: Saat dilimi bilgili `created_at` ve `updated_at` alanlarını ekler.
+
+`Mixin`, birden fazla modele aynı alanları kopyala-yapıştır yapmadan kazandıran
+küçük bir ortak sınıftır. Bağlantı adresi `INTIHAL_DATABASE_URL` ortam
+değişkeninden okunur. Yerelde adres `localhost`, Docker Compose içinde ise PostgreSQL
+servis adı olan `postgres` kullanılır.
