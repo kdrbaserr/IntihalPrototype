@@ -20,6 +20,22 @@ jobs:
   api:
     name: API - Ruff and Pytest
     runs-on: ubuntu-latest
+    env:
+      INTIHAL_TEST_DATABASE_URL: postgresql+asyncpg://intihal_test:intihal_test@localhost:5432/intihal_test
+    services:
+      postgres:
+        image: postgres:17.11-alpine3.23
+        env:
+          POSTGRES_DB: intihal_test
+          POSTGRES_USER: intihal_test
+          POSTGRES_PASSWORD: intihal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U intihal_test -d intihal_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: apps/api

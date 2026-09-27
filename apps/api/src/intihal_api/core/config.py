@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     environment: Literal["local", "test", "staging", "production"] = "local"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
+    database_url: str = (
+        "postgresql+asyncpg://intihal_app:local-postgres-change-me@localhost:5432/intihal"
+    )
 
     model_config = SettingsConfigDict(
         env_file=API_DIR / ".env",

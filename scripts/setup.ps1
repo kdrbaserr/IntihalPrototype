@@ -80,6 +80,14 @@ try {
         throw
     }
 
+    Write-Host "[setup] Veritabanı migration'ları uygulanıyor..."
+    Invoke-DockerCommand `
+        -DockerArguments @(
+            "compose", "--env-file", ".env", "exec", "--no-TTY", "api",
+            "alembic", "upgrade", "head"
+        ) `
+        -FailureMessage "Veritabanı migration'ları uygulanamadı. API loglarını kontrol edin."
+
     Invoke-DockerCommand `
         -DockerArguments @("compose", "--env-file", ".env", "ps") `
         -FailureMessage "Servis durumu okunamadı."

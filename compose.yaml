@@ -12,6 +12,7 @@ services:
       INTIHAL_ENVIRONMENT: "${INTIHAL_ENVIRONMENT:-local}"
       INTIHAL_DEBUG: "${INTIHAL_DEBUG:-true}"
       INTIHAL_API_V1_PREFIX: "${INTIHAL_API_V1_PREFIX:-/api/v1}"
+      INTIHAL_DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
       WATCHFILES_FORCE_POLLING: "true"
     command:
       [
