@@ -162,15 +162,36 @@ Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. 
 belgeleri fiziksel olarak silmek yerine mevcut `deleted` veya `disabled` durumları
 kullanılmalıdır.
 
-Kök dizindeki tek komutluk kurulum migration'ları otomatik uygular. Şemayı Docker
-dışında çalışan yerel veritabanına elle uygulamak için API klasöründe çalıştırın:
+## Migration yönetimi
+
+`20260927_03_initial_schema.py`, B02 kapsamındaki bütün enum, tablo, foreign key,
+constraint ve indeksleri kuran başlangıç migration'ıdır. Tablolar foreign key
+bağımlılık sırasıyla oluşturulur; `downgrade()` ise aynı nesneleri ters sırada kaldırır.
+Bu başlangıç revision'ı yayımlandıktan sonra değiştirilmemeli, her şema değişikliği yeni
+bir Alembic revision'ı olarak eklenmelidir.
+
+Kök dizindeki tek komutluk kurulum migration'ı otomatik uygular. Şemayı Docker dışında
+çalışan yerel veritabanına elle uygulamak için API klasöründe çalıştırın:
 
 ```powershell
 alembic upgrade head
 ```
 
-Son migration'ı geri almak için:
+Mevcut revision'ı görmek için:
 
 ```powershell
-alembic downgrade -1
+alembic current
 ```
+
+Başlangıç migration'ını tamamen geri almak için:
+
+```powershell
+alembic downgrade base
+```
+
+> **Dikkat:** `downgrade base`, bu ilk migration'ın oluşturduğu bütün uygulama
+> tablolarını ve içlerindeki verileri siler. Yalnızca geliştirme/test veritabanında veya
+> doğrulanmış bir yedek alındıktan sonra kullanılmalıdır.
+
+Geri alma sonrasında şemayı tekrar kurmak için yeniden `alembic upgrade head`
+çalıştırılabilir.
