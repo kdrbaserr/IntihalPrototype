@@ -42,8 +42,10 @@ def test_detects_legacy_turkish_windows_encoding() -> None:
 
 @pytest.mark.parametrize("content", [b"", b" \r\n\t "])
 def test_rejects_empty_or_whitespace_only_text(content: bytes) -> None:
-    with pytest.raises(EmptyTextFileError):
+    with pytest.raises(EmptyTextFileError) as captured_error:
         extract_text_file(BytesIO(content))
+
+    assert "Metin içeren" in str(captured_error.value)
 
 
 def test_cleans_controls_and_repeated_spaces_while_preserving_turkish() -> None:
@@ -64,3 +66,4 @@ def test_rejects_binary_data_when_encoding_is_not_reliable() -> None:
         extract_text_file(BytesIO(bytes(range(1, 256))))
 
     assert captured_error.value.code == "unknown_text_encoding"
+    assert "UTF-8" in str(captured_error.value)

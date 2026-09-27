@@ -36,14 +36,18 @@ class TextExtractionError(RuntimeError):
 
 class EmptyTextFileError(TextExtractionError):
     def __init__(self) -> None:
-        super().__init__("no_extractable_text", "Metin dosyası boş.")
+        super().__init__(
+            "no_extractable_text",
+            "TXT dosyasında analiz edilebilecek metin bulunamadı. Metin içeren bir dosya yükleyin.",
+        )
 
 
 class UnknownTextEncodingError(TextExtractionError):
     def __init__(self) -> None:
         super().__init__(
             "unknown_text_encoding",
-            "Metin dosyasının karakter kodlaması güvenle belirlenemedi.",
+            "TXT dosyası okunamadı. Dosya bozuk olabilir; UTF-8 biçiminde yeniden kaydedip "
+            "tekrar yükleyin.",
         )
 
 

@@ -10,6 +10,7 @@ from intihal_api.extraction import (
     EncryptedPdfError,
     InvalidPdfError,
     NoExtractableTextError,
+    OcrRequiredError,
     extract_pdf_pages,
 )
 
@@ -51,6 +52,26 @@ def test_rejects_pdf_without_extractable_text() -> None:
         extract_pdf_pages(BytesIO(make_pdf_bytes()))
 
     assert captured_error.value.code == "no_extractable_text"
+    assert "Metin içeren" in str(captured_error.value)
+
+
+def test_explains_that_a_scanned_pdf_requires_ocr() -> None:
+    document = pymupdf.open()
+    try:
+        page = document.new_page()
+        image = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 10, 10), False)
+        image.clear_with(255)
+        page.insert_image(page.rect, pixmap=image)
+        content = document.tobytes()
+    finally:
+        document.close()
+
+    with pytest.raises(OcrRequiredError) as captured_error:
+        extract_pdf_pages(BytesIO(content))
+
+    assert captured_error.value.code == "ocr_required"
+    assert "OCR" in str(captured_error.value)
+    assert "yeniden yükleyin" in str(captured_error.value)
 
 
 def test_rejects_pdf_without_pages() -> None:
@@ -80,3 +101,5 @@ def test_rejects_invalid_pdf(content: bytes) -> None:
         extract_pdf_pages(BytesIO(content))
 
     assert captured_error.value.code == "invalid_pdf"
+    assert "bozuk" in str(captured_error.value)
+    assert "yeniden kaydedip" in str(captured_error.value)

@@ -27,7 +27,11 @@ class PdfExtractionError(RuntimeError):
 
 class InvalidPdfError(PdfExtractionError):
     def __init__(self) -> None:
-        super().__init__("invalid_pdf", "PDF açılamadı veya dosya yapısı bozuk.")
+        super().__init__(
+            "invalid_pdf",
+            "PDF açılamadı. Dosya bozuk veya eksik olabilir; dosyayı yeniden kaydedip "
+            "tekrar yükleyin.",
+        )
 
 
 class EncryptedPdfError(PdfExtractionError):
@@ -47,7 +51,16 @@ class NoExtractableTextError(PdfExtractionError):
     def __init__(self) -> None:
         super().__init__(
             "no_extractable_text",
-            "PDF içinde çıkarılabilir metin bulunamadı; belge OCR gerektiriyor olabilir.",
+            "PDF'de analiz edilebilecek metin bulunamadı. Metin içeren başka bir dosya yükleyin.",
+        )
+
+
+class OcrRequiredError(PdfExtractionError):
+    def __init__(self) -> None:
+        super().__init__(
+            "ocr_required",
+            "Bu PDF taranmış sayfa görüntülerinden oluşuyor; seçilebilir metin bulunamadı. "
+            "Dosyaya OCR uygulayıp metni aranabilir hâle getirdikten sonra yeniden yükleyin.",
         )
 
 
@@ -76,10 +89,13 @@ def extract_pdf_pages(stream: BinaryIO) -> tuple[ExtractedPdfPage, ...]:
             pages = tuple(
                 _extract_page(document, page_index) for page_index in range(document.page_count)
             )
+            requires_ocr = not any(page.text for page in pages) and _contains_page_images(document)
         finally:
             document.close()
 
         if not any(page.text for page in pages):
+            if requires_ocr:
+                raise OcrRequiredError
             raise NoExtractableTextError
         return pages
     finally:
@@ -105,3 +121,9 @@ def _extract_page(document: pymupdf.Document, page_index: int) -> ExtractedPdfPa
     except (RuntimeError, TypeError, ValueError) as error:
         raise PdfPageExtractionError(page_number) from error
     return ExtractedPdfPage(page_number=page_number, text=text)
+
+
+def _contains_page_images(document: pymupdf.Document) -> bool:
+    return any(
+        document.load_page(page_index).get_images() for page_index in range(document.page_count)
+    )

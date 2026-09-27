@@ -45,6 +45,7 @@ def test_rejects_docx_without_text_after_cleaning(content: str | None) -> None:
         extract_docx_text(stream)
 
     assert captured_error.value.code == "no_extractable_text"
+    assert "metin ekleyip" in str(captured_error.value)
     assert stream.tell() == 0
 
 
@@ -54,3 +55,4 @@ def test_rejects_invalid_docx(content: bytes) -> None:
         extract_docx_text(BytesIO(content))
 
     assert captured_error.value.code == "invalid_docx"
+    assert "Word'de yeniden" in str(captured_error.value)

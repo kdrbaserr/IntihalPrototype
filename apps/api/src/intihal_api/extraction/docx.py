@@ -30,12 +30,20 @@ class DocxExtractionError(RuntimeError):
 
 class InvalidDocxError(DocxExtractionError):
     def __init__(self) -> None:
-        super().__init__("invalid_docx", "DOCX açılamadı veya dosya yapısı bozuk.")
+        super().__init__(
+            "invalid_docx",
+            "DOCX açılamadı. Dosya bozuk veya eksik olabilir; dosyayı Word'de yeniden "
+            "kaydedip tekrar yükleyin.",
+        )
 
 
 class NoExtractableDocxTextError(DocxExtractionError):
     def __init__(self) -> None:
-        super().__init__("no_extractable_text", "DOCX içinde çıkarılabilir metin bulunamadı.")
+        super().__init__(
+            "no_extractable_text",
+            "DOCX dosyasında analiz edilebilecek metin bulunamadı. Belgeye metin ekleyip "
+            "yeniden yükleyin.",
+        )
 
 
 def extract_docx_text(stream: BinaryIO) -> ExtractedDocxText:
