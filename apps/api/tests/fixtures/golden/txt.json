@@ -1,0 +1,30 @@
+{
+  "extracted": {
+    "text": "Türkçe içerik korunur.\nİkinci cümle!",
+    "encoding": "utf-8",
+    "page_number": null
+  },
+  "chunked": {
+    "text": "Türkçe içerik korunur.\nİkinci cümle!",
+    "chunks": [
+      {
+        "chunk_index": 0,
+        "content": "Türkçe içerik korunur.",
+        "char_start": 0,
+        "char_end": 22,
+        "token_count": 3,
+        "page_number": null,
+        "content_sha256": "de17ef3cf801e0cba3f0b6046b117645903b50c3c82b7aef5803ac17f67a4e7c"
+      },
+      {
+        "chunk_index": 1,
+        "content": "İkinci cümle!",
+        "char_start": 23,
+        "char_end": 36,
+        "token_count": 2,
+        "page_number": null,
+        "content_sha256": "d654cbe3eda36bc584b04053d4ad6767af34da886df8e896f4c07f18dce0ac35"
+      }
+    ]
+  }
+}

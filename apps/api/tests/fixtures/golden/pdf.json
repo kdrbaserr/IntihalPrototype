@@ -1,0 +1,44 @@
+{
+  "extracted": [
+    {
+      "page_number": 1,
+      "text": "First page. Second sentence!"
+    },
+    {
+      "page_number": 2,
+      "text": "Third page?"
+    }
+  ],
+  "chunked": {
+    "text": "First page. Second sentence!\nThird page?",
+    "chunks": [
+      {
+        "chunk_index": 0,
+        "content": "First page.",
+        "char_start": 0,
+        "char_end": 11,
+        "token_count": 2,
+        "page_number": 1,
+        "content_sha256": "c70e42c00e8bb962bb5ce960185f81ca549f036778a4b15408786740f5567211"
+      },
+      {
+        "chunk_index": 1,
+        "content": "Second sentence!",
+        "char_start": 12,
+        "char_end": 28,
+        "token_count": 2,
+        "page_number": 1,
+        "content_sha256": "b38af51c4f6e5430c3b72167fe66265827ff5f397f4fd5a931469f12435a0520"
+      },
+      {
+        "chunk_index": 2,
+        "content": "Third page?",
+        "char_start": 29,
+        "char_end": 40,
+        "token_count": 2,
+        "page_number": 2,
+        "content_sha256": "d73030d4cd30d57077f0793ebffa36b5f5d941d669ddc506d992c659c80110ad"
+      }
+    ]
+  }
+}
