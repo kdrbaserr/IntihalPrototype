@@ -1,5 +1,6 @@
 """Document text extraction primitives."""
 
+from intihal_api.extraction.chunking import ChunkedText, TextChunk, create_text_chunks
 from intihal_api.extraction.docx import (
     DocxExtractionError,
     ExtractedDocxText,
@@ -27,6 +28,7 @@ from intihal_api.extraction.text import (
 )
 
 __all__ = [
+    "ChunkedText",
     "DocxExtractionError",
     "EmptyPdfError",
     "EmptyTextFileError",
@@ -41,8 +43,10 @@ __all__ = [
     "PdfExtractionError",
     "PdfPageExtractionError",
     "TextExtractionError",
+    "TextChunk",
     "UnknownTextEncodingError",
     "UnsafeTextContentError",
+    "create_text_chunks",
     "extract_docx_text",
     "extract_pdf_pages",
     "extract_text_file",
