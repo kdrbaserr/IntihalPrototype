@@ -156,6 +156,7 @@ class SourceDocument(BaseModel):
             "storage_key",
             name="uq_source_documents_storage_location",
         ),
+        UniqueConstraint("sha256", name="uq_source_documents_sha256"),
         Index("ix_source_documents_status_license_status", "status", "license_status"),
     )
 

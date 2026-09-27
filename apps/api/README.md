@@ -115,6 +115,12 @@ Kaynağın teknik hazırlanma durumu ayrıca tutulur: `pending`, `processing`, `
 bile lisansı onaylanmamış olabilir. Karşılaştırma işi yalnızca teknik durumu `ready`,
 lisans durumu `approved` olan ve lisans süresi dolmamış kaynakları kullanmalıdır.
 
+`source_documents.sha256` alanı benzersizdir; böylece aynı dosya farklı ad veya MinIO
+yoluyla izinli kaynak havuzuna ikinci kez eklenemez. Bu kural kullanıcı yüklemelerine
+uygulanmaz: farklı kullanıcıların aynı dosyayı yüklemesi geçerli bir senaryodur. SHA-256
+yalnızca birebir içerik eşitliğini ve dosya bütünlüğünü gösterir; metin benzerliği skoru
+veya anlamsal vektör değildir.
+
 Uzun bir kitabı veya makaleyi her aramada baştan sona karşılaştırmak yerine metni küçük
 parçalara ayırıyoruz. Her parça `source_chunks` tablosunda tutulur. `chunk_index`
 parçanın sırasını; `page_number` sayfasını; `char_start` ve `char_end` metin içindeki

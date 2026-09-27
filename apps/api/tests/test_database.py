@@ -134,6 +134,7 @@ def test_source_document_tracks_license_review_and_storage() -> None:
     constraint_names = {constraint.name for constraint in SourceDocument.__table__.constraints}
     assert "ck_source_documents_license_date_range_valid" in constraint_names
     assert "ck_source_documents_size_bytes_non_negative" in constraint_names
+    assert "uq_source_documents_sha256" in constraint_names
     assert "uq_source_documents_storage_location" in constraint_names
 
 
