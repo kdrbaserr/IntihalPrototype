@@ -88,6 +88,44 @@ belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `processing`, `read
 ve `deleted` durumlarıyla izlenir. `deleted`, kaydın denetim izi için tutulduğu mantıksal
 silme durumudur; MinIO nesnesini temizleyen iş ayrıca uygulanmalıdır.
 
+## İzinli kaynak havuzu
+
+Kullanıcının yüklediği belge ile karşılaştırma yaptığımız kaynaklar aynı şey değildir.
+Kullanıcı yüklemeleri `documents` tablosunda, karşılaştırma için önceden sisteme alınan
+eserler `source_documents` tablosunda tutulur. Böylece bir raporda bulunan eşleşmenin
+hangi izinli kaynaktan geldiğini açıkça gösterebiliriz.
+
+Kaynak dosyanın aslı yine MinIO'dadır. `source_documents`, dosyanın MinIO adresiyle
+birlikte başlık, yazar, yayınevi ve geldiği internet adresini saklar. Lisans alanlarının
+günlük dilde anlamı şöyledir:
+
+| Alan | Neden tutuluyor? |
+| --- | --- |
+| `license_name` | Kullanım izninin adı; örneğin “CC BY 4.0” veya kurum sözleşmesi. |
+| `rights_holder` | Eser üzerindeki hakların kimde olduğunu gösterir. |
+| `license_url` | Varsa lisans koşullarının okunabildiği adres. |
+| `attribution_text` | Kaynağı gösterirken yazılması gereken hazır atıf metni. |
+| `license_evidence_reference` | Sözleşme numarası, izin e-postası kaydı veya kanıt dosyası gibi iç referans. |
+| `license_valid_from` / `license_valid_until` | İznin geçerli olduğu tarih aralığı. |
+| `license_verified_at` | Bir görevlinin izni en son ne zaman kontrol ettiği. |
+| `license_status` | Kontrol sonucu: `pending`, `approved`, `rejected` veya `expired`. |
+
+Kaynağın teknik hazırlanma durumu ayrıca tutulur: `pending`, `processing`, `ready`,
+`failed` veya `disabled`. Bu iki ayrı durum önemlidir. Bir dosyanın metni işlenmiş olsa
+bile lisansı onaylanmamış olabilir. Karşılaştırma işi yalnızca teknik durumu `ready`,
+lisans durumu `approved` olan ve lisans süresi dolmamış kaynakları kullanmalıdır.
+
+Uzun bir kitabı veya makaleyi her aramada baştan sona karşılaştırmak yerine metni küçük
+parçalara ayırıyoruz. Her parça `source_chunks` tablosunda tutulur. `chunk_index`
+parçanın sırasını; `page_number` sayfasını; `char_start` ve `char_end` metin içindeki
+yerini gösterir. `content_sha256`, parça sonradan değişti mi kontrol etmeye yarar.
+Kaynak belge fiziksel olarak silinirse ona ait parçalar da otomatik silinir; tek başına
+ve hangi kaynağa ait olduğu bilinmeyen parçalar bırakılmaz.
+
+Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; kendi başına
+hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
+saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.
+
 Kök dizindeki tek komutluk kurulum migration'ları otomatik uygular. Şemayı Docker
 dışında çalışan yerel veritabanına elle uygulamak için API klasöründe çalıştırın:
 

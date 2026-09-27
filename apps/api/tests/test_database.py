@@ -2,7 +2,16 @@ from sqlalchemy import Enum, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intihal_api.db.base import BaseModel
-from intihal_api.db.models import Document, DocumentStatus, User, UserStatus
+from intihal_api.db.models import (
+    Document,
+    DocumentStatus,
+    LicenseStatus,
+    SourceChunk,
+    SourceDocument,
+    SourceDocumentStatus,
+    User,
+    UserStatus,
+)
 from intihal_api.db.session import AsyncSessionFactory, engine
 
 
@@ -81,3 +90,75 @@ def test_document_model_tracks_owner_lifecycle_and_storage() -> None:
     constraint_names = {constraint.name for constraint in Document.__table__.constraints}
     assert "ck_documents_size_bytes_non_negative" in constraint_names
     assert "uq_documents_storage_location" in constraint_names
+
+
+def test_source_document_tracks_license_review_and_storage() -> None:
+    mapper = inspect(SourceDocument)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "title",
+        "author",
+        "publisher",
+        "source_url",
+        "status",
+        "license_status",
+        "license_name",
+        "rights_holder",
+        "license_url",
+        "attribution_text",
+        "license_evidence_reference",
+        "license_valid_from",
+        "license_valid_until",
+        "license_verified_at",
+        "original_filename",
+        "content_type",
+        "size_bytes",
+        "sha256",
+        "storage_bucket",
+        "storage_key",
+        "storage_etag",
+        "created_at",
+        "updated_at",
+    }
+    assert mapper.columns.status.server_default.arg == SourceDocumentStatus.PENDING.value
+    assert mapper.columns.license_status.server_default.arg == LicenseStatus.PENDING.value
+    assert mapper.relationships.chunks.back_populates == "source_document"
+    assert mapper.relationships.chunks.cascade.delete_orphan is True
+
+    constraint_names = {constraint.name for constraint in SourceDocument.__table__.constraints}
+    assert "ck_source_documents_license_date_range_valid" in constraint_names
+    assert "ck_source_documents_size_bytes_non_negative" in constraint_names
+    assert "uq_source_documents_storage_location" in constraint_names
+
+
+def test_source_chunk_keeps_traceable_text_location() -> None:
+    mapper = inspect(SourceChunk)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "source_document_id",
+        "chunk_index",
+        "content",
+        "char_start",
+        "char_end",
+        "token_count",
+        "page_number",
+        "content_sha256",
+        "created_at",
+        "updated_at",
+    }
+    source_foreign_key = next(iter(mapper.columns.source_document_id.foreign_keys))
+    assert source_foreign_key.target_fullname == "source_documents.id"
+    assert source_foreign_key.ondelete == "CASCADE"
+    assert mapper.relationships.source_document.back_populates == "chunks"
+
+    constraint_names = {constraint.name for constraint in SourceChunk.__table__.constraints}
+    assert {
+        "ck_source_chunks_chunk_index_non_negative",
+        "ck_source_chunks_char_start_non_negative",
+        "ck_source_chunks_char_range_valid",
+        "ck_source_chunks_token_count_non_negative",
+        "ck_source_chunks_page_number_positive",
+        "uq_source_chunks_document_index",
+    }.issubset(constraint_names)
