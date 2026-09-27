@@ -1,7 +1,8 @@
-from sqlalchemy import inspect
+from sqlalchemy import Enum, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intihal_api.db.base import BaseModel
+from intihal_api.db.models import Document, DocumentStatus, User, UserStatus
 from intihal_api.db.session import AsyncSessionFactory, engine
 
 
@@ -27,3 +28,56 @@ def test_shared_model_fields_are_defined_once() -> None:
     assert mapper.columns.updated_at.nullable is False
     assert mapper.columns.updated_at.server_default is not None
     assert mapper.columns.updated_at.onupdate is not None
+
+
+def test_user_model_has_identity_and_status_fields() -> None:
+    mapper = inspect(User)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "email",
+        "display_name",
+        "status",
+        "created_at",
+        "updated_at",
+    }
+    assert mapper.columns.email.unique is True
+    assert mapper.columns.email.index is True
+    assert mapper.columns.status.server_default.arg == UserStatus.ACTIVE.value
+    assert isinstance(mapper.columns.status.type, Enum)
+    assert mapper.columns.status.type.enums == ["active", "disabled"]
+
+
+def test_document_model_tracks_owner_lifecycle_and_storage() -> None:
+    mapper = inspect(Document)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "owner_id",
+        "original_filename",
+        "content_type",
+        "size_bytes",
+        "sha256",
+        "status",
+        "storage_bucket",
+        "storage_key",
+        "storage_etag",
+        "created_at",
+        "updated_at",
+    }
+    assert mapper.columns.owner_id.nullable is False
+    owner_foreign_key = next(iter(mapper.columns.owner_id.foreign_keys))
+    assert owner_foreign_key.target_fullname == "users.id"
+    assert mapper.columns.status.server_default.arg == DocumentStatus.UPLOADED.value
+    assert mapper.relationships.owner.back_populates == "documents"
+    assert {status.value for status in DocumentStatus} == {
+        "uploaded",
+        "processing",
+        "ready",
+        "failed",
+        "deleted",
+    }
+
+    constraint_names = {constraint.name for constraint in Document.__table__.constraints}
+    assert "ck_documents_size_bytes_non_negative" in constraint_names
+    assert "uq_documents_storage_location" in constraint_names

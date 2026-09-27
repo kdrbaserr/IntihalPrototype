@@ -73,3 +73,30 @@ aşağıdaki iki mixin'i bütün modellere birlikte kazandırır:
 küçük bir ortak sınıftır. Bağlantı adresi `INTIHAL_DATABASE_URL` ortam
 değişkeninden okunur. Yerelde adres `localhost`, Docker Compose içinde ise PostgreSQL
 servis adı olan `postgres` kullanılır.
+
+## Kullanıcı ve belge tabloları
+
+`users`, kullanıcı kimliğini (`email`, `display_name`) ve hesabın `active` veya
+`disabled` durumunu tutar. `documents.owner_id`, belgeyi zorunlu olarak bir kullanıcıya
+bağlar. Sahibi olan belge varken kullanıcının fiziksel olarak silinmesi `RESTRICT` ile
+engellenir; hesap kapatma işlemi için kullanıcı durumu `disabled` yapılmalıdır.
+
+Dosya içeriği PostgreSQL'e yazılmaz. `documents` tablosundaki `storage_bucket` ve
+`storage_key` MinIO nesnesini gösterir; `storage_etag`, `sha256`, `content_type` ve
+`size_bytes` bütünlük ve dosya metadatasını taşır. Aynı bucket/key çifti yalnızca bir
+belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `processing`, `ready`, `failed`
+ve `deleted` durumlarıyla izlenir. `deleted`, kaydın denetim izi için tutulduğu mantıksal
+silme durumudur; MinIO nesnesini temizleyen iş ayrıca uygulanmalıdır.
+
+Kök dizindeki tek komutluk kurulum migration'ları otomatik uygular. Şemayı Docker
+dışında çalışan yerel veritabanına elle uygulamak için API klasöründe çalıştırın:
+
+```powershell
+alembic upgrade head
+```
+
+Son migration'ı geri almak için:
+
+```powershell
+alembic downgrade -1
+```

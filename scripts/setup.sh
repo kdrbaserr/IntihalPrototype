@@ -28,6 +28,10 @@ docker compose --env-file .env config --quiet
 
 echo "[setup] Servisler build edilip başlatılıyor..."
 docker compose --env-file .env up --detach --build --wait --wait-timeout 300
+
+echo "[setup] Veritabanı migration'ları uygulanıyor..."
+docker compose --env-file .env exec --no-TTY api alembic upgrade head
+
 docker compose --env-file .env ps
 
 printf '\nKurulum tamamlandı.\n'
