@@ -1,7 +1,11 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DocumentUpload, validateSelectedFile } from "./document-upload";
+import {
+  DocumentUpload,
+  responseErrorMessage,
+  validateSelectedFile,
+} from "./document-upload";
 
 class MockXMLHttpRequest {
   static latest: MockXMLHttpRequest;
@@ -68,5 +72,19 @@ describe("DocumentUpload", () => {
     act(() => request.onload?.());
     expect(screen.getByText(/güvenli biçimde yüklendi/i)).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toHaveValue(100);
+  });
+
+  it.each([
+    ["no_extractable_text", /analiz edilebilecek metin bulunamadı/i],
+    ["ocr_required", /OCR uygulayıp metni aranabilir/i],
+    ["invalid_pdf", /PDF açılamadı.*yeniden kaydedip/i],
+    ["invalid_docx", /DOCX açılamadı.*Word'de yeniden kaydedip/i],
+    ["file_signature_mismatch", /dosya bozuk olabilir/i],
+  ])("explains the %s error with an action", (code, expectedMessage) => {
+    const request = {
+      responseText: JSON.stringify({ detail: { code } }),
+    } as XMLHttpRequest;
+
+    expect(responseErrorMessage(request)).toMatch(expectedMessage);
   });
 });

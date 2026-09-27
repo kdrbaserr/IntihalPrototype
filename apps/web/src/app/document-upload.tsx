@@ -17,7 +17,20 @@ const ALLOWED_TYPES = new Map([
 type UploadState = "idle" | "ready" | "uploading" | "success" | "error";
 
 type ApiError = {
-  detail?: string | { message?: string };
+  detail?: string | { code?: string; message?: string };
+};
+
+const ERROR_GUIDANCE: Record<string, string> = {
+  no_extractable_text:
+    "Belgede analiz edilebilecek metin bulunamadı. Metin içeren bir dosya yükleyin.",
+  ocr_required:
+    "Bu PDF taranmış görüntülerden oluşuyor. OCR uygulayıp metni aranabilir hâle getirdikten sonra yeniden yükleyin.",
+  invalid_pdf:
+    "PDF açılamadı. Dosyayı yeniden kaydedip tekrar yükleyin.",
+  invalid_docx:
+    "DOCX açılamadı. Dosyayı Word'de yeniden kaydedip tekrar yükleyin.",
+  file_signature_mismatch:
+    "Dosya bozuk olabilir veya uzantısı içeriğiyle eşleşmiyor. Dosyayı yeniden kaydedip tekrar yükleyin.",
 };
 
 export function validateSelectedFile(file: File): string | null {
@@ -48,7 +61,7 @@ function formatFileSize(sizeBytes: number): string {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function responseErrorMessage(xhr: XMLHttpRequest): string {
+export function responseErrorMessage(xhr: XMLHttpRequest): string {
   try {
     const response = JSON.parse(xhr.responseText) as ApiError;
     if (typeof response.detail === "string") {
@@ -56,6 +69,9 @@ function responseErrorMessage(xhr: XMLHttpRequest): string {
     }
     if (response.detail?.message) {
       return response.detail.message;
+    }
+    if (response.detail?.code && ERROR_GUIDANCE[response.detail.code]) {
+      return ERROR_GUIDANCE[response.detail.code];
     }
   } catch {
     // A non-JSON error response is represented by the generic message below.

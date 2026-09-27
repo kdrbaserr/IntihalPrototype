@@ -68,7 +68,8 @@ class FileSignatureMismatchError(UploadValidationError):
     def __init__(self) -> None:
         super().__init__(
             "file_signature_mismatch",
-            "Dosyanın içeriği bildirilen formatla eşleşmiyor.",
+            "Dosya bozuk olabilir veya uzantısı içeriğiyle eşleşmiyor. Dosyayı kendi "
+            "uygulamasında açıp yeniden kaydederek yükleyin.",
         )
 
 
