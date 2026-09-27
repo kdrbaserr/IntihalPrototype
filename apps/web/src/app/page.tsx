@@ -1,3 +1,5 @@
+import { DocumentUpload } from "./document-upload";
+
 const steps = [
   {
     number: "01",
@@ -30,14 +32,16 @@ export default function HomePage() {
           sonucu kaynağı ve skoruyla birlikte gösterir.
         </p>
         <div className="hero-actions">
-          <button className="primary-action" type="button" disabled>
-            Belge yükleme yakında
-          </button>
+          <a className="primary-action" href="#belge-yukle">
+            Belge yükle
+          </a>
           <a className="secondary-action" href="#nasil-calisir">
             Nasıl çalışır?
           </a>
         </div>
       </section>
+
+      <DocumentUpload />
 
       <section className="workflow" id="nasil-calisir" aria-labelledby="workflow-title">
         <div className="section-heading">

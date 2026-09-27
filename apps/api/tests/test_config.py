@@ -12,6 +12,9 @@ def test_settings_are_loaded_from_prefixed_environment(
         "INTIHAL_DATABASE_URL",
         "postgresql+asyncpg://test:test@localhost:5432/test",
     )
+    monkeypatch.setenv("INTIHAL_MINIO_ENDPOINT", "storage.test:9000")
+    monkeypatch.setenv("INTIHAL_MINIO_SECRET_KEY", "test-storage-secret")
+    monkeypatch.setenv("INTIHAL_MINIO_BUCKET", "test-documents")
     get_settings.cache_clear()
 
     try:
@@ -20,5 +23,8 @@ def test_settings_are_loaded_from_prefixed_environment(
         assert settings.environment == "test"
         assert settings.debug is True
         assert settings.database_url == "postgresql+asyncpg://test:test@localhost:5432/test"
+        assert settings.minio_endpoint == "storage.test:9000"
+        assert settings.minio_secret_key.get_secret_value() == "test-storage-secret"
+        assert settings.minio_bucket == "test-documents"
     finally:
         get_settings.cache_clear()
