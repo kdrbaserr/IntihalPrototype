@@ -1,11 +1,13 @@
 from io import BytesIO
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import pytest
 
+from file_samples import make_pdf_bytes
 from intihal_api.uploads import (
     MAX_UPLOAD_SIZE_BYTES,
     EmptyUploadError,
+    EncryptedDocumentError,
     FileSignatureMismatchError,
     FileTooLargeError,
     UnsupportedFileTypeError,
@@ -16,18 +18,29 @@ PDF_MIME_TYPE = "application/pdf"
 DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
-def make_docx(*, include_document: bool = True) -> BytesIO:
-    stream = BytesIO()
-    with ZipFile(stream, mode="w", compression=ZIP_DEFLATED) as archive:
-        archive.writestr("[Content_Types].xml", "<Types />")
-        if include_document:
-            archive.writestr("word/document.xml", "<w:document />")
-    stream.seek(0)
+def make_docx(*, include_document: bool = True, total_size: int | None = None) -> BytesIO:
+    document_content = b"<w:document />" if include_document else b""
+    compression = ZIP_STORED if total_size is not None else ZIP_DEFLATED
+
+    def write_stream(content: bytes) -> BytesIO:
+        result = BytesIO()
+        with ZipFile(result, mode="w", compression=compression) as archive:
+            archive.writestr("[Content_Types].xml", "<Types />")
+            if include_document:
+                archive.writestr("word/document.xml", content)
+        result.seek(0)
+        return result
+
+    stream = write_stream(document_content)
+    if total_size is not None:
+        document_content += b"x" * (total_size - len(stream.getvalue()))
+        stream = write_stream(document_content)
+        assert len(stream.getvalue()) == total_size
     return stream
 
 
 def test_valid_pdf_is_accepted_and_stream_is_rewound() -> None:
-    stream = BytesIO(b"%PDF-1.7\nvalid test document")
+    stream = BytesIO(make_pdf_bytes())
 
     result = validate_document_upload(
         filename="tez.PDF",
@@ -41,11 +54,11 @@ def test_valid_pdf_is_accepted_and_stream_is_rewound() -> None:
 
 
 def test_file_at_exactly_twenty_megabytes_is_accepted() -> None:
-    stream = BytesIO(b"%PDF-" + b"x" * (MAX_UPLOAD_SIZE_BYTES - 5))
+    stream = make_docx(total_size=MAX_UPLOAD_SIZE_BYTES)
 
     result = validate_document_upload(
-        filename="sinir.pdf",
-        content_type=PDF_MIME_TYPE,
+        filename="sinir.docx",
+        content_type=DOCX_MIME_TYPE,
         stream=stream,
     )
 
@@ -113,6 +126,35 @@ def test_pdf_extension_with_wrong_signature_is_rejected() -> None:
             filename="sahte.pdf",
             content_type=PDF_MIME_TYPE,
             stream=BytesIO(b"not really a PDF"),
+        )
+
+
+def test_pdf_with_valid_header_but_broken_structure_is_rejected() -> None:
+    with pytest.raises(FileSignatureMismatchError):
+        validate_document_upload(
+            filename="bozuk.pdf",
+            content_type=PDF_MIME_TYPE,
+            stream=BytesIO(b"%PDF-1.7\n1 0 obj\ntruncated"),
+        )
+
+
+def test_password_protected_pdf_is_rejected() -> None:
+    with pytest.raises(EncryptedDocumentError) as captured_error:
+        validate_document_upload(
+            filename="sifreli.pdf",
+            content_type=PDF_MIME_TYPE,
+            stream=BytesIO(make_pdf_bytes(password="secret")),
+        )
+
+    assert captured_error.value.code == "encrypted_document"
+
+
+def test_encrypted_office_container_renamed_as_docx_is_rejected() -> None:
+    with pytest.raises(EncryptedDocumentError):
+        validate_document_upload(
+            filename="sifreli.docx",
+            content_type=DOCX_MIME_TYPE,
+            stream=BytesIO(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"encrypted-package"),
         )
 
 

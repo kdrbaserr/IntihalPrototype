@@ -7,9 +7,13 @@ from pathlib import PurePath
 from typing import BinaryIO
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
+
 MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024
 TEXT_SIGNATURE_SAMPLE_BYTES = 8192
 DOCX_REQUIRED_MEMBERS = frozenset({"[Content_Types].xml", "word/document.xml"})
+OLE_COMPOUND_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 
 class DocumentFormat(StrEnum):
@@ -65,6 +69,14 @@ class FileSignatureMismatchError(UploadValidationError):
         super().__init__(
             "file_signature_mismatch",
             "Dosyanın içeriği bildirilen formatla eşleşmiyor.",
+        )
+
+
+class EncryptedDocumentError(UploadValidationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "encrypted_document",
+            "Şifreli belgeler işlenemez; belgenin şifresini kaldırıp yeniden yükleyin.",
         )
 
 
@@ -137,10 +149,32 @@ def _content_matches_format(
 ) -> bool:
     stream.seek(0, SEEK_SET)
     if document_format is DocumentFormat.PDF:
-        return stream.read(5) == b"%PDF-"
+        return _is_readable_pdf(stream)
     if document_format is DocumentFormat.DOCX:
+        if stream.read(len(OLE_COMPOUND_SIGNATURE)) == OLE_COMPOUND_SIGNATURE:
+            raise EncryptedDocumentError
         return _is_docx(stream)
     return _looks_like_text(stream, size_bytes)
+
+
+def _is_readable_pdf(stream: BinaryIO) -> bool:
+    stream.seek(0, SEEK_SET)
+    if stream.read(5) != b"%PDF-":
+        return False
+
+    stream.seek(0, SEEK_SET)
+    try:
+        reader = PdfReader(stream, strict=True)
+        if reader.is_encrypted:
+            raise EncryptedDocumentError
+        # Accessing pages forces pypdf to resolve the page tree instead of only
+        # recognizing the header and trailer of a damaged file.
+        len(reader.pages)
+        return True
+    except EncryptedDocumentError:
+        raise
+    except (PdfReadError, OSError, TypeError, ValueError):
+        return False
 
 
 def _is_docx(stream: BinaryIO) -> bool:
@@ -151,6 +185,8 @@ def _is_docx(stream: BinaryIO) -> bool:
     stream.seek(0, SEEK_SET)
     try:
         with ZipFile(stream) as archive:
+            if any(member.flag_bits & 0x1 for member in archive.infolist()):
+                raise EncryptedDocumentError
             return DOCX_REQUIRED_MEMBERS.issubset(archive.namelist())
     except (BadZipFile, OSError):
         return False

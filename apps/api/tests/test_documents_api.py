@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from file_samples import make_pdf_bytes
 from intihal_api.db.models import Document, User, UserStatus
 from intihal_api.db.session import get_db_session
 from intihal_api.main import create_app
@@ -148,16 +149,17 @@ async def test_document_endpoints_enforce_ownership(
                 )
                 assert disabled_identity.status_code == 403
 
+                pdf_content = make_pdf_bytes()
                 upload = await client.post(
                     "/api/v1/documents",
                     headers={"X-User-ID": str(ACTIVE_USER_ID)},
-                    files={"file": ("Tez.pdf", b"%PDF-1.7\nAPI upload", "application/pdf")},
+                    files={"file": ("Tez.pdf", pdf_content, "application/pdf")},
                 )
                 assert upload.status_code == 201
                 uploaded_document = upload.json()
                 assert uploaded_document["original_filename"] == "Tez.pdf"
                 assert uploaded_document["content_type"] == "application/pdf"
-                assert uploaded_document["size_bytes"] == 19
+                assert uploaded_document["size_bytes"] == len(pdf_content)
                 assert uploaded_document["status"] == "uploaded"
                 assert len(uploaded_document["sha256"]) == 64
 

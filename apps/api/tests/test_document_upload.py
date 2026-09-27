@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from file_samples import make_pdf_bytes
 from intihal_api.db.models import Document, DocumentStatus, User
 from intihal_api.storage import StorageConnectionError, StoredObject
 from intihal_api.uploads import (
@@ -112,7 +113,7 @@ class FakeSession:
 @pytest.mark.anyio
 async def test_upload_saves_hash_size_mime_and_original_filename() -> None:
     owner_id = UUID("11111111-1111-1111-1111-111111111111")
-    content = b"%PDF-1.7\nexample document content"
+    content = make_pdf_bytes()
     stream = BytesIO(content)
     storage = FakeStorage()
     session = FakeSession()
@@ -153,7 +154,7 @@ async def test_upload_metadata_is_persisted_in_postgresql(
     engine = create_async_engine(migrated_upload_database_url)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     owner_id = UUID("11111111-1111-1111-1111-111111111111")
-    content = b"%PDF-1.7\npersisted document"
+    content = make_pdf_bytes()
     storage = FakeStorage()
 
     try:
@@ -202,7 +203,7 @@ async def test_database_failure_rolls_back_and_removes_uploaded_object() -> None
             owner_id=UUID("11111111-1111-1111-1111-111111111111"),
             filename="tez.pdf",
             content_type="application/pdf",
-            stream=BytesIO(b"%PDF-1.7\ncontent"),
+            stream=BytesIO(make_pdf_bytes()),
             session=session,
         )
 
@@ -221,7 +222,7 @@ async def test_storage_failure_does_not_create_database_record() -> None:
             owner_id=UUID("11111111-1111-1111-1111-111111111111"),
             filename="tez.pdf",
             content_type="application/pdf",
-            stream=BytesIO(b"%PDF-1.7\ncontent"),
+            stream=BytesIO(make_pdf_bytes()),
             session=session,
         )
 
@@ -251,3 +252,34 @@ def test_original_filename_is_cleaned_and_keeps_extension_when_truncated() -> No
     assert "/" not in cleaned_name
     assert "\\" not in cleaned_name
     assert "\x00" not in cleaned_name
+
+
+@pytest.mark.parametrize(
+    "unsafe_name",
+    [
+        "../../../../etc/passwd.pdf",
+        "..\\..\\Windows\\system32\\config.pdf",
+        "/tmp/../secret/tez.pdf",
+        "C:\\Users\\victim\\Documents\\tez.pdf",
+    ],
+)
+@pytest.mark.anyio
+async def test_path_traversal_filename_cannot_control_storage_key(unsafe_name: str) -> None:
+    owner_id = UUID("11111111-1111-1111-1111-111111111111")
+    storage = FakeStorage()
+    session = FakeSession()
+
+    document = await DocumentUploadService(storage).create_document(
+        owner_id=owner_id,
+        filename=unsafe_name,
+        content_type="application/pdf",
+        stream=BytesIO(make_pdf_bytes()),
+        session=session,
+    )
+
+    assert document.original_filename.endswith(".pdf")
+    assert "/" not in document.original_filename
+    assert "\\" not in document.original_filename
+    assert document.storage_key.startswith(f"documents/{owner_id.hex}/")
+    assert ".." not in document.storage_key
+    assert document.original_filename not in document.storage_key

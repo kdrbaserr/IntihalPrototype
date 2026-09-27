@@ -10,6 +10,7 @@ from intihal_api.uploads.service import (
 from intihal_api.uploads.validation import (
     MAX_UPLOAD_SIZE_BYTES,
     EmptyUploadError,
+    EncryptedDocumentError,
     FileSignatureMismatchError,
     FileTooLargeError,
     UnsupportedFileTypeError,
@@ -22,6 +23,7 @@ __all__ = [
     "MAX_UPLOAD_SIZE_BYTES",
     "DocumentUploadService",
     "EmptyUploadError",
+    "EncryptedDocumentError",
     "FileSignatureMismatchError",
     "FileTooLargeError",
     "InvalidOriginalFilenameError",
