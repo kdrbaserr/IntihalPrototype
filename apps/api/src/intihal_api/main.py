@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.api.documents import router as documents_router
 from intihal_api.api.health import router as health_router
 from intihal_api.core.config import get_settings
 from intihal_api.storage import ObjectStorageService, create_object_storage_service
@@ -38,6 +39,7 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
     # stable contract consumed by Docker and future clients.
     application.include_router(health_router, include_in_schema=False)
     application.include_router(health_router, prefix=settings.api_v1_prefix)
+    application.include_router(documents_router, prefix=settings.api_v1_prefix)
 
     return application
 
