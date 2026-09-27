@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from uuid import UUID
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     environment: Literal["local", "test", "staging", "production"] = "local"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
+    cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    demo_user_id: UUID = UUID("11111111-1111-1111-1111-111111111111")
     database_url: str = (
         "postgresql+asyncpg://intihal_app:local-postgres-change-me@localhost:5432/intihal"
     )

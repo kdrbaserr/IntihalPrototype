@@ -88,6 +88,14 @@ try {
         ) `
         -FailureMessage "Veritabanı migration'ları uygulanamadı. API loglarını kontrol edin."
 
+    Write-Host "[setup] Yerel web denemesi için demo kullanıcı hazırlanıyor..."
+    Invoke-DockerCommand `
+        -DockerArguments @(
+            "compose", "--env-file", ".env", "exec", "--no-TTY", "api",
+            "python", "-m", "intihal_api.db.seed"
+        ) `
+        -FailureMessage "Yerel demo kullanıcı hazırlanamadı. API loglarını kontrol edin."
+
     Invoke-DockerCommand `
         -DockerArguments @("compose", "--env-file", ".env", "ps") `
         -FailureMessage "Servis durumu okunamadı."

@@ -11,6 +11,10 @@ describe("HomePage", () => {
       screen.getByRole("heading", { name: /metin benzerliğini kanıtlarıyla incele/i }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(3);
-    expect(screen.getByRole("button", { name: /belge yükleme yakında/i })).toBeDisabled();
+    expect(screen.getByRole("link", { name: /^belge yükle$/i })).toHaveAttribute(
+      "href",
+      "#belge-yukle",
+    );
+    expect(screen.getByLabelText(/bilgisayardan dosya seç/i)).toBeInTheDocument();
   });
 });

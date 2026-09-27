@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
 from intihal_api.api.documents import router as documents_router
@@ -33,6 +34,13 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
         version=settings.app_version,
         debug=settings.debug,
         lifespan=lifespan,
+    )
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "X-User-ID"],
     )
 
     # `/health` is convenient for local checks; the versioned path is the
