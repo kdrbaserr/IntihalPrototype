@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import codecs
-import unicodedata
 from dataclasses import dataclass
 from io import SEEK_SET
 from typing import BinaryIO
 
 from charset_normalizer import from_bytes
 
+from intihal_api.extraction.normalization import normalize_extracted_text
+
 MAX_ACCEPTABLE_CHAOS = 0.2
-PERMITTED_CONTROL_CHARACTERS = frozenset({"\t", "\n", "\r", "\f"})
 BOM_ENCODINGS = (
     (codecs.BOM_UTF32_BE, "utf-32"),
     (codecs.BOM_UTF32_LE, "utf-32"),
@@ -56,7 +56,7 @@ class UnsafeTextContentError(TextExtractionError):
 
 
 def extract_text_file(stream: BinaryIO) -> ExtractedTextFile:
-    """Decode a text stream strictly, reject binary/control content, and rewind it."""
+    """Decode and normalize a text stream, then rewind it."""
 
     stream.seek(0, SEEK_SET)
     try:
@@ -65,8 +65,7 @@ def extract_text_file(stream: BinaryIO) -> ExtractedTextFile:
             raise EmptyTextFileError
 
         text, encoding = _decode_text(content)
-        _require_safe_text(text)
-        text = text.strip()
+        text = normalize_extracted_text(text)
         if not text:
             raise EmptyTextFileError
         return ExtractedTextFile(text=text, encoding=encoding)
@@ -97,12 +96,3 @@ def _decode_text(content: bytes) -> tuple[str, str]:
         return content.decode("cp1254", errors="strict"), "windows-1254"
     except UnicodeDecodeError as error:
         raise UnknownTextEncodingError from error
-
-
-def _require_safe_text(text: str) -> None:
-    if any(
-        character not in PERMITTED_CONTROL_CHARACTERS
-        and unicodedata.category(character).startswith("C")
-        for character in text
-    ):
-        raise UnsafeTextContentError

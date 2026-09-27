@@ -11,6 +11,8 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 from lxml.etree import XMLSyntaxError
 
+from intihal_api.extraction.normalization import normalize_extracted_text
+
 
 @dataclass(frozen=True, slots=True)
 class ExtractedDocxText:
@@ -52,9 +54,10 @@ def extract_docx_text(stream: BinaryIO) -> ExtractedDocxText:
             if text:
                 blocks.append(text)
 
-        if not blocks:
+        text = normalize_extracted_text("\n".join(blocks))
+        if not text:
             raise NoExtractableDocxTextError
-        return ExtractedDocxText(text="\n".join(blocks))
+        return ExtractedDocxText(text=text)
     finally:
         stream.seek(0, SEEK_SET)
 

@@ -26,7 +26,7 @@ def make_text_pdf(*page_texts: str) -> bytes:
 
 
 def test_extracts_text_with_one_based_page_numbers() -> None:
-    stream = BytesIO(make_text_pdf("First page", "Second page"))
+    stream = BytesIO(make_text_pdf("First   page", "Second page"))
 
     pages = extract_pdf_pages(stream)
 

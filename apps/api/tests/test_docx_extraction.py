@@ -12,7 +12,7 @@ from intihal_api.extraction import (
 
 def make_docx() -> BytesIO:
     document = Document()
-    document.add_heading("Thesis title", level=1)
+    document.add_heading("Thesis   title", level=1)
     table = document.add_table(rows=1, cols=2)
     table.rows[0].cells[0].text = "Source"
     table.rows[0].cells[1].text = "Score"
@@ -28,14 +28,18 @@ def test_extracts_paragraphs_and_tables_in_document_order() -> None:
 
     extracted = extract_docx_text(stream)
 
-    assert extracted.text == "Thesis title\nSource\tScore\nClosing paragraph"
+    assert extracted.text == "Thesis title\nSource Score\nClosing paragraph"
     assert extracted.page_number is None
     assert stream.tell() == 0
 
 
-def test_rejects_docx_without_text() -> None:
+@pytest.mark.parametrize("content", [None, "\u200b"])
+def test_rejects_docx_without_text_after_cleaning(content: str | None) -> None:
     stream = BytesIO()
-    Document().save(stream)
+    document = Document()
+    if content is not None:
+        document.add_paragraph(content)
+    document.save(stream)
 
     with pytest.raises(NoExtractableDocxTextError) as captured_error:
         extract_docx_text(stream)

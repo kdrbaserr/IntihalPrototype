@@ -6,6 +6,8 @@ from typing import BinaryIO
 
 import pymupdf
 
+from intihal_api.extraction.normalization import normalize_extracted_text
+
 
 @dataclass(frozen=True, slots=True)
 class ExtractedPdfPage:
@@ -99,7 +101,7 @@ def _open_pdf(pdf_bytes: bytes) -> pymupdf.Document:
 def _extract_page(document: pymupdf.Document, page_index: int) -> ExtractedPdfPage:
     page_number = page_index + 1
     try:
-        text = document.load_page(page_index).get_text("text", sort=True).strip()
+        text = normalize_extracted_text(document.load_page(page_index).get_text("text", sort=True))
     except (RuntimeError, TypeError, ValueError) as error:
         raise PdfPageExtractionError(page_number) from error
     return ExtractedPdfPage(page_number=page_number, text=text)

@@ -6,7 +6,6 @@ import pytest
 from intihal_api.extraction import (
     EmptyTextFileError,
     UnknownTextEncodingError,
-    UnsafeTextContentError,
     extract_text_file,
 )
 
@@ -47,17 +46,17 @@ def test_rejects_empty_or_whitespace_only_text(content: bytes) -> None:
         extract_text_file(BytesIO(content))
 
 
-@pytest.mark.parametrize(
-    "content",
-    [
-        b"safe prefix\x00binary suffix",
-        "visible\u202etext".encode(),
-        codecs.BOM_UTF16_LE + b"\x00",
-    ],
-)
-def test_rejects_unsafe_or_malformed_text(content: bytes) -> None:
-    with pytest.raises((UnsafeTextContentError, UnknownTextEncodingError)):
-        extract_text_file(BytesIO(content))
+def test_cleans_controls_and_repeated_spaces_while_preserving_turkish() -> None:
+    content = "  Türkçe\x00\t  içerik\u202e  korunur.  \r\n İkinci   satır. "
+
+    extracted = extract_text_file(BytesIO(content.encode()))
+
+    assert extracted.text == "Türkçe içerik korunur.\nİkinci satır."
+
+
+def test_rejects_malformed_bom_text() -> None:
+    with pytest.raises(UnknownTextEncodingError):
+        extract_text_file(BytesIO(codecs.BOM_UTF16_LE + b"\x00"))
 
 
 def test_rejects_binary_data_when_encoding_is_not_reliable() -> None:
