@@ -126,6 +126,42 @@ Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; ke
 hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
 saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.
 
+## Analiz, belge parçaları ve eşleşmeler
+
+Yüklenen bir belgeyi kaynak havuzuyla karşılaştırırken üç ayrı tür kayıt oluşur:
+
+1. `document_chunks`, kullanıcının yüklediği uzun belgeyi küçük ve aranabilir metin
+   parçalarına böler. Sayfa, sıra ve karakter konumları tutulduğu için bulunan bir
+   cümlenin belgenin neresinde olduğu daha sonra tekrar gösterilebilir.
+2. `analyses`, yapılan her karşılaştırma çalışmasının fişidir. Hangi belgenin hangi
+   algoritma sürümü ve hangi puan sınırıyla incelendiğini, işlemin ne zaman başlayıp
+   bittiğini ve hata varsa nedenini saklar.
+3. `matches`, kullanıcı belgesindeki bir parça ile izinli kaynak havuzundaki bir parça
+   arasında bulunan eşleşmedir. Puanla birlikte her iki taraftaki tam metin konumunu da
+   saklar; rapor bu bilgilerle eşleşen bölümleri işaretleyebilir.
+
+Analiz durumları sırayla `queued` (kuyrukta), `processing` (çalışıyor), `completed`
+(tamamlandı), `failed` (hata oluştu) ve `cancelled` (iptal edildi) olabilir. Analiz
+başladığında `started_at`, bittiğinde `completed_at` doldurulmalıdır. Hata durumunda
+teknik kayıtların içine bakmadan anlaşılabilecek kısa bir açıklama `failure_reason`
+alanına yazılmalıdır.
+
+`similarity_threshold`, hangi puanın rapora alınmaya değer sayıldığını 0 ile 1 arasında
+saklar. Varsayılan değer `0.8000`, yani yüzde 80'dir. `algorithm_version` da mutlaka
+kaydedilir; böylece yöntem ileride değişse bile eski sonucun hangi sürümle üretildiği
+bilinir.
+
+Bir eşleşmenin `method` alanı nasıl bulunduğunu belirtir: `exact` birebir metin,
+`lexical` kelime benzerliği, `semantic` anlam benzerliği, `hybrid` ise birden fazla
+yöntemin birlikte kullanılmasıdır. `similarity_score` 0 ile 1 arasındadır. Bu puan
+tek başına “intihal var” kararı değildir; raporda incelenmesi gereken benzerliği gösterir.
+
+Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
+belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
+Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
+belgeleri fiziksel olarak silmek yerine mevcut `deleted` veya `disabled` durumları
+kullanılmalıdır.
+
 Kök dizindeki tek komutluk kurulum migration'ları otomatik uygular. Şemayı Docker
 dışında çalışan yerel veritabanına elle uygulamak için API klasöründe çalıştırın:
 

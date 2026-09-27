@@ -3,9 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from intihal_api.db.base import BaseModel
 from intihal_api.db.models import (
+    Analysis,
+    AnalysisStatus,
     Document,
+    DocumentChunk,
     DocumentStatus,
     LicenseStatus,
+    Match,
+    MatchMethod,
     SourceChunk,
     SourceDocument,
     SourceDocumentStatus,
@@ -161,4 +166,104 @@ def test_source_chunk_keeps_traceable_text_location() -> None:
         "ck_source_chunks_token_count_non_negative",
         "ck_source_chunks_page_number_positive",
         "uq_source_chunks_document_index",
+    }.issubset(constraint_names)
+
+
+def test_document_chunk_keeps_uploaded_text_location() -> None:
+    mapper = inspect(DocumentChunk)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "document_id",
+        "chunk_index",
+        "content",
+        "char_start",
+        "char_end",
+        "token_count",
+        "page_number",
+        "content_sha256",
+        "created_at",
+        "updated_at",
+    }
+    document_foreign_key = next(iter(mapper.columns.document_id.foreign_keys))
+    assert document_foreign_key.target_fullname == "documents.id"
+    assert document_foreign_key.ondelete == "CASCADE"
+    assert mapper.relationships.document.back_populates == "chunks"
+
+    constraint_names = {constraint.name for constraint in DocumentChunk.__table__.constraints}
+    assert {
+        "ck_document_chunks_chunk_index_non_negative",
+        "ck_document_chunks_char_start_non_negative",
+        "ck_document_chunks_char_range_valid",
+        "ck_document_chunks_token_count_non_negative",
+        "ck_document_chunks_page_number_positive",
+        "uq_document_chunks_document_index",
+    }.issubset(constraint_names)
+
+
+def test_analysis_tracks_execution_and_algorithm_version() -> None:
+    mapper = inspect(Analysis)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "document_id",
+        "status",
+        "algorithm_version",
+        "similarity_threshold",
+        "started_at",
+        "completed_at",
+        "failure_reason",
+        "created_at",
+        "updated_at",
+    }
+    document_foreign_key = next(iter(mapper.columns.document_id.foreign_keys))
+    assert document_foreign_key.target_fullname == "documents.id"
+    assert document_foreign_key.ondelete == "RESTRICT"
+    assert mapper.columns.status.server_default.arg == AnalysisStatus.QUEUED.value
+    assert mapper.columns.similarity_threshold.server_default.arg == "0.8000"
+    assert mapper.relationships.matches.cascade.delete_orphan is True
+
+    constraint_names = {constraint.name for constraint in Analysis.__table__.constraints}
+    assert "ck_analyses_similarity_threshold_range" in constraint_names
+    assert "ck_analyses_execution_date_range_valid" in constraint_names
+
+
+def test_match_links_analysis_and_both_evidence_chunks() -> None:
+    mapper = inspect(Match)
+
+    assert set(mapper.columns.keys()) == {
+        "id",
+        "analysis_id",
+        "document_chunk_id",
+        "source_chunk_id",
+        "method",
+        "similarity_score",
+        "document_match_start",
+        "document_match_end",
+        "source_match_start",
+        "source_match_end",
+        "matched_token_count",
+        "explanation",
+        "created_at",
+        "updated_at",
+    }
+    foreign_keys = {
+        foreign_key.target_fullname: foreign_key.ondelete
+        for column in mapper.columns
+        for foreign_key in column.foreign_keys
+    }
+    assert foreign_keys == {
+        "analyses.id": "CASCADE",
+        "document_chunks.id": "RESTRICT",
+        "source_chunks.id": "RESTRICT",
+    }
+    assert mapper.columns.method.type.enums == [method.value for method in MatchMethod]
+
+    constraint_names = {constraint.name for constraint in Match.__table__.constraints}
+    assert {
+        "ck_matches_similarity_score_range",
+        "ck_matches_document_match_range_valid",
+        "ck_matches_source_match_range_valid",
+        "ck_matches_matched_token_count_positive",
+        "uq_matches_evidence_location",
     }.issubset(constraint_names)
