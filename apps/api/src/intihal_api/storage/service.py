@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Protocol
+from dataclasses import dataclass
+from io import SEEK_SET
+from typing import BinaryIO, Protocol
 from uuid import UUID
 
 from minio import Minio
@@ -37,18 +39,40 @@ class StorageServiceError(StorageError):
     """MinIO responded, but could not complete the requested operation."""
 
 
-class BucketClient(Protocol):
-    """Small client surface needed during application startup."""
+class ObjectWriteResult(Protocol):
+    etag: str
+
+
+class StorageClient(Protocol):
+    """MinIO operations used by the application storage adapter."""
 
     def bucket_exists(self, bucket_name: str) -> bool: ...
 
     def make_bucket(self, bucket_name: str) -> None: ...
 
+    def put_object(
+        self,
+        bucket_name: str,
+        object_name: str,
+        data: BinaryIO,
+        length: int,
+        content_type: str = "application/octet-stream",
+    ) -> ObjectWriteResult: ...
+
+    def remove_object(self, bucket_name: str, object_name: str) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class StoredObject:
+    bucket: str
+    key: str
+    etag: str
+
 
 class ObjectStorageService:
     """Own bucket initialization and translate SDK errors into safe app errors."""
 
-    def __init__(self, client: BucketClient, bucket_name: str) -> None:
+    def __init__(self, client: StorageClient, bucket_name: str) -> None:
         self.client = client
         self.bucket_name = bucket_name
 
@@ -83,7 +107,48 @@ class ObjectStorageService:
             return StorageAuthenticationError(
                 "Dosya depolama servisi kimlik bilgilerini veya bucket erişimini reddetti."
             )
-        return StorageServiceError("Dosya depolama servisi bucket işlemini tamamlayamadı.")
+        return StorageServiceError("Dosya depolama servisi işlemi tamamlayamadı.")
+
+    def upload_object(
+        self,
+        *,
+        key: str,
+        stream: BinaryIO,
+        size_bytes: int,
+        content_type: str,
+    ) -> StoredObject:
+        """Upload a validated stream and return its durable storage identity."""
+
+        stream.seek(0, SEEK_SET)
+        try:
+            result = self.client.put_object(
+                self.bucket_name,
+                key,
+                stream,
+                size_bytes,
+                content_type,
+            )
+            return StoredObject(bucket=self.bucket_name, key=key, etag=result.etag)
+        except S3Error as error:
+            raise self._translate_s3_error(error) from error
+        except (HTTPError, OSError, TimeoutError) as error:
+            raise StorageConnectionError(
+                "Dosya depolama servisine şu anda ulaşılamıyor."
+            ) from error
+        finally:
+            stream.seek(0, SEEK_SET)
+
+    def remove_object(self, key: str) -> None:
+        """Remove an object, primarily to compensate for a failed database write."""
+
+        try:
+            self.client.remove_object(self.bucket_name, key)
+        except S3Error as error:
+            raise self._translate_s3_error(error) from error
+        except (HTTPError, OSError, TimeoutError) as error:
+            raise StorageConnectionError(
+                "Dosya depolama servisine şu anda ulaşılamıyor."
+            ) from error
 
 
 def build_document_storage_key(owner_id: UUID, document_id: UUID) -> str:

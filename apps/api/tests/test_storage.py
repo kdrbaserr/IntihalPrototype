@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 from uuid import UUID, uuid4
 
 import pytest
@@ -9,8 +10,13 @@ from intihal_api.storage import (
     ObjectStorageService,
     StorageAuthenticationError,
     StorageConnectionError,
+    StoredObject,
     build_document_storage_key,
 )
+
+
+class FakeWriteResult:
+    etag = "fake-etag"
 
 
 class FakeBucketClient:
@@ -26,6 +32,8 @@ class FakeBucketClient:
         self.make_error = make_error
         self.bucket_exists_calls: list[str] = []
         self.make_bucket_calls: list[str] = []
+        self.put_object_calls: list[tuple[str, str, bytes, int, str]] = []
+        self.remove_object_calls: list[tuple[str, str]] = []
 
     def bucket_exists(self, bucket_name: str) -> bool:
         self.bucket_exists_calls.append(bucket_name)
@@ -38,6 +46,20 @@ class FakeBucketClient:
         if self.make_error is not None:
             raise self.make_error
         self.exists = True
+
+    def put_object(
+        self,
+        bucket_name: str,
+        object_name: str,
+        data: BytesIO,
+        length: int,
+        content_type: str = "application/octet-stream",
+    ) -> FakeWriteResult:
+        self.put_object_calls.append((bucket_name, object_name, data.read(), length, content_type))
+        return FakeWriteResult()
+
+    def remove_object(self, bucket_name: str, object_name: str) -> None:
+        self.remove_object_calls.append((bucket_name, object_name))
 
 
 def s3_error(code: str) -> S3Error:
@@ -108,6 +130,44 @@ def test_document_storage_key_is_stable_unique_and_filename_free() -> None:
         "documents/11111111111111111111111111111111/22222222222222222222222222222222"
     )
     assert ".." not in first_key
+
+
+def test_object_upload_returns_storage_identity_and_rewinds_stream() -> None:
+    client = FakeBucketClient(exists=True)
+    service = ObjectStorageService(client, "intihal-documents")
+    stream = BytesIO(b"document bytes")
+
+    stored = service.upload_object(
+        key="documents/owner/document",
+        stream=stream,
+        size_bytes=len(stream.getvalue()),
+        content_type="application/pdf",
+    )
+
+    assert stored == StoredObject(
+        bucket="intihal-documents",
+        key="documents/owner/document",
+        etag="fake-etag",
+    )
+    assert client.put_object_calls == [
+        (
+            "intihal-documents",
+            "documents/owner/document",
+            b"document bytes",
+            14,
+            "application/pdf",
+        )
+    ]
+    assert stream.tell() == 0
+
+
+def test_object_removal_uses_configured_bucket() -> None:
+    client = FakeBucketClient(exists=True)
+    service = ObjectStorageService(client, "intihal-documents")
+
+    service.remove_object("documents/owner/document")
+
+    assert client.remove_object_calls == [("intihal-documents", "documents/owner/document")]
 
 
 def test_application_lifespan_initializes_storage() -> None:
