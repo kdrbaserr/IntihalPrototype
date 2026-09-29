@@ -16,11 +16,14 @@ from intihal_api.analysis.lexical import (
     tokenize_words,
     word_ngram_cosine_similarity,
 )
+from intihal_api.analysis.overlap import WordOverlapResult, calculate_word_overlap
 
 __all__ = [
     "CharacterTfidfModel",
     "SparseVector",
     "TfidfModel",
+    "WordOverlapResult",
+    "calculate_word_overlap",
     "character_ngram_cosine_similarity",
     "cosine_similarity",
     "fit_character_ngram_tfidf",
