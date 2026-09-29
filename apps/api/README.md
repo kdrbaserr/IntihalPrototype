@@ -239,6 +239,26 @@ etkilenmez. Algoritmanın bilinçli biçimde değiştirildiği durumda mevcut be
 üzerine sessizce yazmak yerine yeni fixture sürümü oluşturulmalıdır. Böylece eski ve
 yeni davranış karşılaştırılabilir ve skor değişiminin nedeni denetlenebilir kalır.
 
+Benchmark testleri bütün `benchmark-v*.json` dosyalarını otomatik keşfeder. Her sürümde
+skor bantlarının `0–1` içinde olduğu, kategorilerin bantlarının birbirine girmediği ve
+eşik kararının bandın tamamında değişmeden kaldığı doğrulanır. Örneğin `match` beklenen
+bir vakanın yalnızca golden skoru değil, kabul bandının alt sınırı da eşikten düşük
+olamaz. Böylece küçük sayısal oynamalar eşik kararını sessizce tersine çeviremez.
+
+En yeni benchmark ayrıca uygulamanın varsayılan algoritma sürümü, ağırlıkları ve eşiğiyle
+birebir eşleşmek zorundadır. Yeni bir fixture eklendiğinde testler onu ek test kodu
+gerektirmeden çalıştırır. Skor formülü veya varsayılan ağırlıklar bilinçli olarak
+değiştirilecekse izlenecek yol şudur:
+
+1. `INTIHAL_ALGORITHM_VERSION` varsayılanını artırın.
+2. Eski fixture'ı koruyup bir sonraki `benchmark-vN.json` dosyasını oluşturun.
+3. Yeni ağırlık, eşik, golden skor ve kabul bantlarını yeni sürüme yazın.
+4. Değişimin gerekçesini fixture içindeki `purpose` alanlarında ve değişiklik kaydında
+   açıklayın.
+
+Bu sözleşmeler normal `pytest` paketi içinde çalıştığı için CI, sürümlenmemiş veya kabul
+aralıklarını bozan algoritma değişikliklerini birleştirmeden önce durdurur.
+
 Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
 belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
 Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
