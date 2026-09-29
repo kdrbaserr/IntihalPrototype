@@ -154,6 +154,11 @@ Yeniden indeksleme pasif veya hâlihazırda işlenen kaynaklarda reddedilir. Esk
 bir analiz sonucunda kullanılıyorsa foreign key koruması bunların değiştirilmesini
 engeller ve API çakışma yanıtı verir; böylece mevcut raporların kanıtı bozulmaz.
 
+Yerel kurulum ayrıca TXT, iki sayfalı PDF ve DOCX biçimlerinde üç küçük sentetik kaynak
+üretir. Bunlar gerçek yükleme ve indeksleme servislerinden geçer, `CC0-1.0` lisansıyla
+onaylanır ve tekrar çalışan seed komutu aynı kayıtları çoğaltmaz. Envanter ve elle
+çalıştırma bilgisi için `../../docs/sample-corpus.md` belgesine bakın.
+
 Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; kendi başına
 hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
 saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.
