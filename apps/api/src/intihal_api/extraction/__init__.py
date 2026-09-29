@@ -19,6 +19,7 @@ from intihal_api.extraction.pdf import (
     PdfPageExtractionError,
     extract_pdf_pages,
 )
+from intihal_api.extraction.pipeline import extract_and_chunk_document
 from intihal_api.extraction.text import (
     EmptyTextFileError,
     ExtractedTextFile,
@@ -50,6 +51,7 @@ __all__ = [
     "UnsafeTextContentError",
     "create_text_chunks",
     "extract_docx_text",
+    "extract_and_chunk_document",
     "extract_pdf_pages",
     "extract_text_file",
 ]

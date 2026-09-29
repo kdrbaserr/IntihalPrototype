@@ -132,6 +132,12 @@ yerini gösterir. `content_sha256`, parça sonradan değişti mi kontrol etmeye 
 Kaynak belge fiziksel olarak silinirse ona ait parçalar da otomatik silinir; tek başına
 ve hangi kaynağa ait olduğu bilinmeyen parçalar bırakılmaz.
 
+Kaynak belgeler için ayrı bir metin temizleme veya parçalama algoritması yoktur. PDF,
+DOCX ve TXT kaynakları da kullanıcı belgeleriyle aynı `extract_and_chunk_document`
+hattından geçer. Bu hat ortak Unicode/boşluk normalizasyonunu ve `TextChunk`
+sözleşmesini uygular; kaynak servisi sözleşmedeki alanları değiştirmeden `source_chunks`
+kayıtlarına taşır.
+
 Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; kendi başına
 hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
 saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.
