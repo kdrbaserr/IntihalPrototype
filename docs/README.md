@@ -9,6 +9,8 @@ Burada zamanla şunlar tutulacaktır:
 - API kullanımı,
 - veri saklama ve KVKK kararları,
 - izinli kaynak havuzu kuralları,
+- kabul edilen lisanslar ve yasak veri toplama davranışları
+  (`source-acquisition-policy.md`),
 - algoritmanın sınırları ve değerlendirme sonuçları.
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada

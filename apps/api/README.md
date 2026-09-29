@@ -164,6 +164,8 @@ onaylanır ve tekrar çalışan seed komutu aynı kayıtları çoğaltmaz. Envan
 Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; kendi başına
 hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
 saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.
+Kabul edilen lisansların karar matrisi ve yasak veri toplama davranışları
+`../../docs/source-acquisition-policy.md` belgesinde tanımlıdır.
 
 ## Analiz, belge parçaları ve eşleşmeler
 
