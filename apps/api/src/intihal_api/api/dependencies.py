@@ -5,7 +5,7 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intihal_api.db.models import User, UserStatus
+from intihal_api.db.models import User, UserRole, UserStatus
 from intihal_api.db.session import get_db_session
 from intihal_api.storage import ObjectStorageService
 
@@ -52,4 +52,21 @@ def _authentication_error() -> HTTPException:
 
 
 CurrentUser = Annotated[User, Depends(require_current_user)]
+
+
+async def require_admin_user(current_user: CurrentUser) -> User:
+    """Require the authenticated active user to have the administrator role."""
+
+    if current_user.role is not UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "admin_required",
+                "message": "Bu işlem için yönetici yetkisi gerekli.",
+            },
+        )
+    return current_user
+
+
+AdminUser = Annotated[User, Depends(require_admin_user)]
 ObjectStorage = Annotated[ObjectStorageService, Depends(get_object_storage)]

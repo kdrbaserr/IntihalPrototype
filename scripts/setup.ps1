@@ -96,6 +96,14 @@ try {
         ) `
         -FailureMessage "Yerel demo kullanıcı hazırlanamadı. API loglarını kontrol edin."
 
+    Write-Host "[setup] Sentetik örnek kaynak havuzu hazırlanıyor..."
+    Invoke-DockerCommand `
+        -DockerArguments @(
+            "compose", "--env-file", ".env", "exec", "--no-TTY", "api",
+            "python", "-m", "intihal_api.corpus.sample_seed"
+        ) `
+        -FailureMessage "Sentetik örnek kaynak havuzu hazırlanamadı. API loglarını kontrol edin."
+
     Invoke-DockerCommand `
         -DockerArguments @("compose", "--env-file", ".env", "ps") `
         -FailureMessage "Servis durumu okunamadı."

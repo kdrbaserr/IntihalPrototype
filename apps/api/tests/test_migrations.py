@@ -27,6 +27,7 @@ EXPECTED_TABLES = {
 }
 EXPECTED_ENUMS = {
     "user_status",
+    "user_role",
     "document_status",
     "source_document_status",
     "license_status",
@@ -96,6 +97,23 @@ async def fetch_public_object_names(database_url: str) -> tuple[set[str], set[st
         await connection.close()
 
 
+async def fetch_required_source_columns(database_url: str) -> set[str]:
+    connection = await asyncpg.connect(asyncpg_url(database_url))
+    try:
+        rows = await connection.fetch(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'source_documents'
+              AND is_nullable = 'NO'
+            """
+        )
+        return {row["column_name"] for row in rows}
+    finally:
+        await connection.close()
+
+
 @pytest.fixture
 def migrated_database_url() -> Iterator[str]:
     database_url = require_test_database_url()
@@ -154,15 +172,28 @@ def test_foreign_key_rejects_document_without_owner(migrated_database_url: str) 
     run_async(insert_document_with_missing_owner(migrated_database_url))
 
 
+def test_source_identity_license_and_checksum_are_required(
+    migrated_database_url: str,
+) -> None:
+    required_columns = run_async(fetch_required_source_columns(migrated_database_url))
+
+    assert {
+        "title",
+        "license_name",
+        "license_evidence_reference",
+        "sha256",
+    } <= required_columns
+
+
 async def insert_duplicate_source_hash(database_url: str) -> None:
     connection = await asyncpg.connect(asyncpg_url(database_url))
     try:
         statement = """
             INSERT INTO source_documents (
-                id, title, license_name, rights_holder, original_filename,
-                content_type, size_bytes, sha256, storage_bucket, storage_key
+                id, title, license_name, rights_holder, license_evidence_reference,
+                original_filename, content_type, size_bytes, sha256, storage_bucket, storage_key
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         """
         checksum = "b" * 64
         await connection.execute(
@@ -171,6 +202,7 @@ async def insert_duplicate_source_hash(database_url: str) -> None:
             "Birinci kaynak",
             "CC BY 4.0",
             "Örnek Hak Sahibi",
+            "LISANS-KANIT-001",
             "birinci.txt",
             "text/plain",
             100,
@@ -186,6 +218,7 @@ async def insert_duplicate_source_hash(database_url: str) -> None:
                 "İkinci kaynak",
                 "CC BY 4.0",
                 "Örnek Hak Sahibi",
+                "LISANS-KANIT-002",
                 "ikinci.txt",
                 "text/plain",
                 100,

@@ -105,7 +105,7 @@ günlük dilde anlamı şöyledir:
 | `rights_holder` | Eser üzerindeki hakların kimde olduğunu gösterir. |
 | `license_url` | Varsa lisans koşullarının okunabildiği adres. |
 | `attribution_text` | Kaynağı gösterirken yazılması gereken hazır atıf metni. |
-| `license_evidence_reference` | Sözleşme numarası, izin e-postası kaydı veya kanıt dosyası gibi iç referans. |
+| `license_evidence_reference` | Zorunlu sözleşme numarası, izin e-postası kaydı veya kanıt dosyası gibi iç referans. |
 | `license_valid_from` / `license_valid_until` | İznin geçerli olduğu tarih aralığı. |
 | `license_verified_at` | Bir görevlinin izni en son ne zaman kontrol ettiği. |
 | `license_status` | Kontrol sonucu: `pending`, `approved`, `rejected` veya `expired`. |
@@ -121,6 +121,10 @@ uygulanmaz: farklı kullanıcıların aynı dosyayı yüklemesi geçerli bir sen
 yalnızca birebir içerik eşitliğini ve dosya bütünlüğünü gösterir; metin benzerliği skoru
 veya anlamsal vektör değildir.
 
+Her kaynak kaydında `title`, `license_name`, `license_evidence_reference` ve `sha256`
+zorunludur. Böylece kaynağın kimliği, kullanım hakkının türü ve kanıtı ile dosyanın
+bütünlük bilgisi eksik olan bir kayıt izinli havuza alınamaz.
+
 Uzun bir kitabı veya makaleyi her aramada baştan sona karşılaştırmak yerine metni küçük
 parçalara ayırıyoruz. Her parça `source_chunks` tablosunda tutulur. `chunk_index`
 parçanın sırasını; `page_number` sayfasını; `char_start` ve `char_end` metin içindeki
@@ -128,9 +132,40 @@ yerini gösterir. `content_sha256`, parça sonradan değişti mi kontrol etmeye 
 Kaynak belge fiziksel olarak silinirse ona ait parçalar da otomatik silinir; tek başına
 ve hangi kaynağa ait olduğu bilinmeyen parçalar bırakılmaz.
 
+Kaynak belgeler için ayrı bir metin temizleme veya parçalama algoritması yoktur. PDF,
+DOCX ve TXT kaynakları da kullanıcı belgeleriyle aynı `extract_and_chunk_document`
+hattından geçer. Bu hat ortak Unicode/boşluk normalizasyonunu ve `TextChunk`
+sözleşmesini uygular; kaynak servisi sözleşmedeki alanları değiştirmeden `source_chunks`
+kayıtlarına taşır.
+
+### Admin kaynak API'si
+
+Kaynak havuzu işlemleri yalnızca `role=admin` olan aktif kullanıcılara açıktır. Yerel
+geliştirme ortamındaki demo kullanıcı seed işlemiyle admin yapılır. Endpointler:
+
+| Yöntem ve yol | Amaç |
+| --- | --- |
+| `POST /api/v1/admin/sources` | Dosyayı ve zorunlu lisans metadatasını ekler, ardından ortak hatla indeksler. |
+| `GET /api/v1/admin/sources` | Kaynakları sayfalı listeler; `status` ve `license_status` filtrelerini kabul eder. |
+| `POST /api/v1/admin/sources/{id}/disable` | Kaynağı ve kanıtlarını silmeden karşılaştırma havuzunda pasifleştirir. |
+| `POST /api/v1/admin/sources/{id}/reindex` | MinIO'daki asıl dosyanın SHA-256 bütünlüğünü doğrulayıp mevcut chunk'ları atomik olarak yeniler. |
+
+Yeniden indeksleme pasif veya hâlihazırda işlenen kaynaklarda reddedilir. Eski chunk'lar
+bir analiz sonucunda kullanılıyorsa foreign key koruması bunların değiştirilmesini
+engeller ve API çakışma yanıtı verir; böylece mevcut raporların kanıtı bozulmaz. MinIO
+içeriği kayıtlı `sha256` veya dosya boyutuyla eşleşmiyorsa işlem `source_checksum_mismatch`
+kodu ve `409 Conflict` ile durur; kaynak durumu ve mevcut chunk'lar değiştirilmez.
+
+Yerel kurulum ayrıca TXT, iki sayfalı PDF ve DOCX biçimlerinde üç küçük sentetik kaynak
+üretir. Bunlar gerçek yükleme ve indeksleme servislerinden geçer, `CC0-1.0` lisansıyla
+onaylanır ve tekrar çalışan seed komutu aynı kayıtları çoğaltmaz. Envanter ve elle
+çalıştırma bilgisi için `../../docs/sample-corpus.md` belgesine bakın.
+
 Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; kendi başına
 hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
 saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.
+Kabul edilen lisansların karar matrisi ve yasak veri toplama davranışları
+`../../docs/source-acquisition-policy.md` belgesinde tanımlıdır.
 
 ## Analiz, belge parçaları ve eşleşmeler
 

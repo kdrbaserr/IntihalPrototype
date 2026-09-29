@@ -32,6 +32,12 @@ docker compose --env-file .env up --detach --build --wait --wait-timeout 300
 echo "[setup] Veritabanı migration'ları uygulanıyor..."
 docker compose --env-file .env exec --no-TTY api alembic upgrade head
 
+echo "[setup] Yerel demo kullanıcı hazırlanıyor..."
+docker compose --env-file .env exec --no-TTY api python -m intihal_api.db.seed
+
+echo "[setup] Sentetik örnek kaynak havuzu hazırlanıyor..."
+docker compose --env-file .env exec --no-TTY api python -m intihal_api.corpus.sample_seed
+
 docker compose --env-file .env ps
 
 printf '\nKurulum tamamlandı.\n'

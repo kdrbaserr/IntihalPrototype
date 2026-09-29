@@ -14,6 +14,7 @@ from intihal_api.db.models import (
     SourceDocument,
     SourceDocumentStatus,
     User,
+    UserRole,
     UserStatus,
 )
 from intihal_api.db.session import AsyncSessionFactory, engine, get_db_session
@@ -35,6 +36,7 @@ __all__ = [
     "SourceDocumentStatus",
     "TimestampMixin",
     "User",
+    "UserRole",
     "UserStatus",
     "UUIDPrimaryKeyMixin",
     "engine",

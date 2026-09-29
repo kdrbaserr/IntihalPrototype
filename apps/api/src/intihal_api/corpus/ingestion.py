@@ -125,7 +125,6 @@ class SourceDocumentIngestionService:
             stream=stream,
             session=session,
         )
-        await session.refresh(source)
         return source
 
     async def _remove_orphaned_object(self, storage_key: str) -> None:

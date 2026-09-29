@@ -8,6 +8,7 @@ from intihal_api.storage.service import (
     StorageServiceError,
     StoredObject,
     build_document_storage_key,
+    build_source_storage_key,
     create_object_storage_service,
 )
 
@@ -19,5 +20,6 @@ __all__ = [
     "StorageServiceError",
     "StoredObject",
     "build_document_storage_key",
+    "build_source_storage_key",
     "create_object_storage_service",
 ]

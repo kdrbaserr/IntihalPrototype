@@ -15,6 +15,7 @@ from intihal_api.db.models import (
     SourceDocument,
     SourceDocumentStatus,
     User,
+    UserRole,
     UserStatus,
 )
 from intihal_api.db.session import AsyncSessionFactory, engine
@@ -52,6 +53,7 @@ def test_user_model_has_identity_and_status_fields() -> None:
         "email",
         "display_name",
         "status",
+        "role",
         "created_at",
         "updated_at",
     }
@@ -60,6 +62,9 @@ def test_user_model_has_identity_and_status_fields() -> None:
     assert mapper.columns.status.server_default.arg == UserStatus.ACTIVE.value
     assert isinstance(mapper.columns.status.type, Enum)
     assert mapper.columns.status.type.enums == ["active", "disabled"]
+    assert mapper.columns.role.server_default.arg == UserRole.USER.value
+    assert isinstance(mapper.columns.role.type, Enum)
+    assert mapper.columns.role.type.enums == ["user", "admin"]
 
 
 def test_document_model_tracks_owner_lifecycle_and_storage() -> None:
@@ -128,6 +133,13 @@ def test_source_document_tracks_license_review_and_storage() -> None:
     }
     assert mapper.columns.status.server_default.arg == SourceDocumentStatus.PENDING.value
     assert mapper.columns.license_status.server_default.arg == LicenseStatus.PENDING.value
+    for required_column in (
+        "title",
+        "license_name",
+        "license_evidence_reference",
+        "sha256",
+    ):
+        assert mapper.columns[required_column].nullable is False
     assert mapper.relationships.chunks.back_populates == "source_document"
     assert mapper.relationships.chunks.cascade.delete_orphan is True
 
