@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 from typing import BinaryIO, Protocol
 
 from sqlalchemy import delete
@@ -7,6 +8,7 @@ from starlette.concurrency import run_in_threadpool
 
 from intihal_api.db.models import SourceChunk, SourceDocument, SourceDocumentStatus
 from intihal_api.extraction import ChunkedText, extract_and_chunk_document
+from intihal_api.uploads import calculate_sha256
 from intihal_api.uploads.validation import ALLOWED_MIME_TYPES, DocumentFormat
 
 FORMAT_BY_CONTENT_TYPE = {
@@ -30,6 +32,16 @@ class UnsupportedSourceContentTypeError(ValueError):
     """The persisted source MIME type cannot be routed to an extractor."""
 
 
+class SourceChecksumMismatchError(RuntimeError):
+    """Stored source bytes no longer match their registered immutable identity."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Kaynak dosyanın checksum değeri kayıtlı SHA-256 ile eşleşmiyor; "
+            "dosya değiştirilmiş olabilir."
+        )
+
+
 class SourceDocumentProcessingService:
     """Extract, normalize, and persist chunks for one licensed source document."""
 
@@ -41,6 +53,11 @@ class SourceDocumentProcessingService:
         session: SourceProcessingSession,
     ) -> ChunkedText:
         document_format = _document_format_for(source_document.content_type)
+        checksum, size_bytes = await run_in_threadpool(calculate_sha256, stream)
+        if not hmac.compare_digest(checksum, source_document.sha256) or (
+            size_bytes != source_document.size_bytes
+        ):
+            raise SourceChecksumMismatchError
 
         source_document.status = SourceDocumentStatus.PROCESSING
         await session.commit()

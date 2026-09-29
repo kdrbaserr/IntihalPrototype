@@ -113,7 +113,8 @@ async def test_admin_can_add_list_reindex_and_disable_source(
 ) -> None:
     engine = create_async_engine(migrated_admin_database_url)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    storage = ObjectStorageService(FakeMinioClient(), "intihal-documents")
+    minio_client = FakeMinioClient()
+    storage = ObjectStorageService(minio_client, "intihal-documents")
     application = create_app(storage_service=storage)
 
     async def override_db_session() -> AsyncIterator[AsyncSession]:
@@ -150,6 +151,19 @@ async def test_admin_can_add_list_reindex_and_disable_source(
                 )
                 assert forbidden.status_code == 403
                 assert forbidden.json()["detail"]["code"] == "admin_required"
+
+                missing_permission = await client.post(
+                    "/api/v1/admin/sources",
+                    headers={"X-User-ID": str(ADMIN_ID)},
+                    data={
+                        "title": "Eksik İzinli Kaynak",
+                        "license_name": "CC BY 4.0",
+                        "rights_holder": "Örnek Yayınevi",
+                    },
+                    files={"file": ("eksik.txt", b"Kaynak metni.", "text/plain")},
+                )
+                assert missing_permission.status_code == 422
+                assert minio_client.objects == {}
 
                 created = await client.post(
                     "/api/v1/admin/sources",
@@ -188,6 +202,15 @@ async def test_admin_can_add_list_reindex_and_disable_source(
                 )
                 assert reindexed.status_code == 200, reindexed.text
                 assert reindexed.json()["status"] == "ready"
+
+                storage_key = next(iter(minio_client.objects))
+                minio_client.objects[storage_key] = b"Sonradan degistirilmis kaynak."
+                checksum_conflict = await client.post(
+                    f"/api/v1/admin/sources/{source_id}/reindex",
+                    headers={"X-User-ID": str(ADMIN_ID)},
+                )
+                assert checksum_conflict.status_code == 409
+                assert checksum_conflict.json()["detail"]["code"] == "source_checksum_mismatch"
 
                 disabled = await client.post(
                     f"/api/v1/admin/sources/{source_id}/disable",

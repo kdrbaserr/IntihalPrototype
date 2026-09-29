@@ -148,11 +148,13 @@ geliştirme ortamındaki demo kullanıcı seed işlemiyle admin yapılır. Endpo
 | `POST /api/v1/admin/sources` | Dosyayı ve zorunlu lisans metadatasını ekler, ardından ortak hatla indeksler. |
 | `GET /api/v1/admin/sources` | Kaynakları sayfalı listeler; `status` ve `license_status` filtrelerini kabul eder. |
 | `POST /api/v1/admin/sources/{id}/disable` | Kaynağı ve kanıtlarını silmeden karşılaştırma havuzunda pasifleştirir. |
-| `POST /api/v1/admin/sources/{id}/reindex` | MinIO'daki asıl dosyayı tekrar okuyup mevcut chunk'ları atomik olarak yeniler. |
+| `POST /api/v1/admin/sources/{id}/reindex` | MinIO'daki asıl dosyanın SHA-256 bütünlüğünü doğrulayıp mevcut chunk'ları atomik olarak yeniler. |
 
 Yeniden indeksleme pasif veya hâlihazırda işlenen kaynaklarda reddedilir. Eski chunk'lar
 bir analiz sonucunda kullanılıyorsa foreign key koruması bunların değiştirilmesini
-engeller ve API çakışma yanıtı verir; böylece mevcut raporların kanıtı bozulmaz.
+engeller ve API çakışma yanıtı verir; böylece mevcut raporların kanıtı bozulmaz. MinIO
+içeriği kayıtlı `sha256` veya dosya boyutuyla eşleşmiyorsa işlem `source_checksum_mismatch`
+kodu ve `409 Conflict` ile durur; kaynak durumu ve mevcut chunk'lar değiştirilmez.
 
 Yerel kurulum ayrıca TXT, iki sayfalı PDF ve DOCX biçimlerinde üç küçük sentetik kaynak
 üretir. Bunlar gerçek yükleme ve indeksleme servislerinden geçer, `CC0-1.0` lisansıyla

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 from io import BytesIO
 from uuid import UUID
 
 import pytest
 
-from intihal_api.corpus import SourceDocumentProcessingService
+from intihal_api.corpus import SourceChecksumMismatchError, SourceDocumentProcessingService
 from intihal_api.db.models import SourceChunk, SourceDocument, SourceDocumentStatus
 from intihal_api.extraction import EmptyTextFileError
 
@@ -36,7 +37,7 @@ class FakeSession:
         return object()
 
 
-def make_source() -> SourceDocument:
+def make_source(content: bytes = b"Kaynak metni.") -> SourceDocument:
     return SourceDocument(
         id=SOURCE_ID,
         title="Örnek kaynak",
@@ -45,8 +46,8 @@ def make_source() -> SourceDocument:
         license_evidence_reference="KANIT-001",
         original_filename="kaynak.txt",
         content_type="text/plain",
-        size_bytes=1,
-        sha256="a" * 64,
+        size_bytes=len(content),
+        sha256=hashlib.sha256(content).hexdigest(),
         storage_bucket="sources",
         storage_key="sources/example",
     )
@@ -54,9 +55,9 @@ def make_source() -> SourceDocument:
 
 @pytest.mark.anyio
 async def test_source_document_uses_canonical_normalization_and_chunk_contract() -> None:
-    source = make_source()
-    session = FakeSession()
     content = "  Türkçe\x00 kaynak.  \r\n İkinci   cümle. ".encode()
+    source = make_source(content)
+    session = FakeSession()
 
     result = await SourceDocumentProcessingService().process(
         source_document=source,
@@ -83,7 +84,7 @@ async def test_source_document_uses_canonical_normalization_and_chunk_contract()
 
 @pytest.mark.anyio
 async def test_source_document_is_marked_failed_when_extraction_fails() -> None:
-    source = make_source()
+    source = make_source(b"")
     session = FakeSession()
 
     with pytest.raises(EmptyTextFileError):
@@ -100,14 +101,34 @@ async def test_source_document_is_marked_failed_when_extraction_fails() -> None:
 
 @pytest.mark.anyio
 async def test_source_chunk_transaction_rolls_back_when_persistence_fails() -> None:
-    source = make_source()
+    content = b"Kaynak metni."
+    source = make_source(content)
     session = FakeSession(commit_error_at=2)
 
     with pytest.raises(RuntimeError, match="database unavailable"):
         await SourceDocumentProcessingService().process(
             source_document=source,
-            stream=BytesIO(b"Kaynak metni."),
+            stream=BytesIO(content),
             session=session,
         )
 
     assert session.rollback_calls == 1
+
+
+@pytest.mark.anyio
+async def test_modified_source_checksum_is_rejected_before_reindexing() -> None:
+    source = make_source("Kayıtlı özgün içerik.".encode())
+    source.status = SourceDocumentStatus.READY
+    session = FakeSession()
+
+    with pytest.raises(SourceChecksumMismatchError, match="değiştirilmiş olabilir"):
+        await SourceDocumentProcessingService().process(
+            source_document=source,
+            stream=BytesIO("Sonradan değiştirilmiş içerik.".encode()),
+            session=session,
+        )
+
+    assert source.status is SourceDocumentStatus.READY
+    assert session.commit_calls == 0
+    assert session.execute_calls == 0
+    assert session.added == []

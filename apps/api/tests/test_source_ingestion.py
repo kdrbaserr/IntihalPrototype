@@ -115,6 +115,24 @@ async def test_invalid_metadata_is_rejected_before_object_upload() -> None:
 
 
 @pytest.mark.anyio
+async def test_missing_license_evidence_is_rejected_before_object_upload() -> None:
+    storage = FakeStorage()
+    session = FakeSession()
+
+    with pytest.raises(ValueError, match="Lisans kanıt referansı"):
+        await SourceDocumentIngestionService(storage).create_source(
+            metadata=metadata(license_evidence_reference="  "),
+            filename="kaynak.txt",
+            content_type="text/plain",
+            stream=BytesIO(b"Kaynak metni."),
+            session=session,
+        )
+
+    assert storage.uploaded_content is None
+    assert session.added == []
+
+
+@pytest.mark.anyio
 async def test_metadata_persistence_failure_removes_orphaned_source_object() -> None:
     storage = FakeStorage()
     session = FakeSession(commit_error_at=1)

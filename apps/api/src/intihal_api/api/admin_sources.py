@@ -13,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from intihal_api.api.dependencies import AdminUser, DatabaseSession, ObjectStorage
 from intihal_api.corpus import (
+    SourceChecksumMismatchError,
     SourceDocumentIngestionService,
     SourceDocumentProcessingService,
     SourceMetadata,
@@ -196,6 +197,11 @@ async def reindex_source_document(
         return source
     except StorageError as error:
         raise _storage_unavailable(error) from error
+    except SourceChecksumMismatchError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "source_checksum_mismatch", "message": str(error)},
+        ) from error
     except (PdfExtractionError, DocxExtractionError, TextExtractionError) as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
