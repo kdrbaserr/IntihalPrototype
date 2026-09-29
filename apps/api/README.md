@@ -225,6 +225,20 @@ farklı kaynaklar veya yöntemler genel oranı yapay olarak yükseltmez. Hesapla
 `0–1` oranını, yüzde karşılığını, ham eşleşme sayısını, benzersiz eşleşen karakter
 sayısını ve birleştirilmiş kanıt aralıklarını birlikte döndürür.
 
+### Sürümlü benzerlik örnekleri
+
+Algoritmanın beklenen davranışı `tests/fixtures/similarity/benchmark-v1.json` dosyasında
+sürümlenir. Veri seti; birebir, küçük değişiklikli, ortak akademik kalıp içeren ve
+ilgisiz metin çiftlerini birlikte tutar. Her örnekte değişmeyen bir kimlik, kullanım
+amacı, beklenen skor, kabul aralığı ve eşik kararı bulunur.
+
+Fixture içindeki `dataset_version` metinlerin ve beklentilerin sürümünü;
+`algorithm_version` ise bu skorları üreten algoritmayı belirtir. Ağırlıklar ve eşik de
+fixture içine kopyalandığı için test sonucu geliştiricinin yerel `.env` ayarlarından
+etkilenmez. Algoritmanın bilinçli biçimde değiştirildiği durumda mevcut beklentilerin
+üzerine sessizce yazmak yerine yeni fixture sürümü oluşturulmalıdır. Böylece eski ve
+yeni davranış karşılaştırılabilir ve skor değişiminin nedeni denetlenebilir kalır.
+
 Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
 belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
 Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
