@@ -105,7 +105,7 @@ günlük dilde anlamı şöyledir:
 | `rights_holder` | Eser üzerindeki hakların kimde olduğunu gösterir. |
 | `license_url` | Varsa lisans koşullarının okunabildiği adres. |
 | `attribution_text` | Kaynağı gösterirken yazılması gereken hazır atıf metni. |
-| `license_evidence_reference` | Sözleşme numarası, izin e-postası kaydı veya kanıt dosyası gibi iç referans. |
+| `license_evidence_reference` | Zorunlu sözleşme numarası, izin e-postası kaydı veya kanıt dosyası gibi iç referans. |
 | `license_valid_from` / `license_valid_until` | İznin geçerli olduğu tarih aralığı. |
 | `license_verified_at` | Bir görevlinin izni en son ne zaman kontrol ettiği. |
 | `license_status` | Kontrol sonucu: `pending`, `approved`, `rejected` veya `expired`. |
@@ -120,6 +120,10 @@ yoluyla izinli kaynak havuzuna ikinci kez eklenemez. Bu kural kullanıcı yükle
 uygulanmaz: farklı kullanıcıların aynı dosyayı yüklemesi geçerli bir senaryodur. SHA-256
 yalnızca birebir içerik eşitliğini ve dosya bütünlüğünü gösterir; metin benzerliği skoru
 veya anlamsal vektör değildir.
+
+Her kaynak kaydında `title`, `license_name`, `license_evidence_reference` ve `sha256`
+zorunludur. Böylece kaynağın kimliği, kullanım hakkının türü ve kanıtı ile dosyanın
+bütünlük bilgisi eksik olan bir kayıt izinli havuza alınamaz.
 
 Uzun bir kitabı veya makaleyi her aramada baştan sona karşılaştırmak yerine metni küçük
 parçalara ayırıyoruz. Her parça `source_chunks` tablosunda tutulur. `chunk_index`

@@ -189,7 +189,7 @@ class SourceDocument(BaseModel):
     rights_holder: Mapped[str] = mapped_column(String(300), nullable=False)
     license_url: Mapped[str | None] = mapped_column(String(2048))
     attribution_text: Mapped[str | None] = mapped_column(Text)
-    license_evidence_reference: Mapped[str | None] = mapped_column(String(500))
+    license_evidence_reference: Mapped[str] = mapped_column(String(500), nullable=False)
     license_valid_from: Mapped[date | None] = mapped_column(Date)
     license_valid_until: Mapped[date | None] = mapped_column(Date)
     license_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

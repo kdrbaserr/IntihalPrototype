@@ -128,6 +128,13 @@ def test_source_document_tracks_license_review_and_storage() -> None:
     }
     assert mapper.columns.status.server_default.arg == SourceDocumentStatus.PENDING.value
     assert mapper.columns.license_status.server_default.arg == LicenseStatus.PENDING.value
+    for required_column in (
+        "title",
+        "license_name",
+        "license_evidence_reference",
+        "sha256",
+    ):
+        assert mapper.columns[required_column].nullable is False
     assert mapper.relationships.chunks.back_populates == "source_document"
     assert mapper.relationships.chunks.cascade.delete_orphan is True
 
