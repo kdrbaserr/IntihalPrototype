@@ -138,6 +138,22 @@ hattından geçer. Bu hat ortak Unicode/boşluk normalizasyonunu ve `TextChunk`
 sözleşmesini uygular; kaynak servisi sözleşmedeki alanları değiştirmeden `source_chunks`
 kayıtlarına taşır.
 
+### Admin kaynak API'si
+
+Kaynak havuzu işlemleri yalnızca `role=admin` olan aktif kullanıcılara açıktır. Yerel
+geliştirme ortamındaki demo kullanıcı seed işlemiyle admin yapılır. Endpointler:
+
+| Yöntem ve yol | Amaç |
+| --- | --- |
+| `POST /api/v1/admin/sources` | Dosyayı ve zorunlu lisans metadatasını ekler, ardından ortak hatla indeksler. |
+| `GET /api/v1/admin/sources` | Kaynakları sayfalı listeler; `status` ve `license_status` filtrelerini kabul eder. |
+| `POST /api/v1/admin/sources/{id}/disable` | Kaynağı ve kanıtlarını silmeden karşılaştırma havuzunda pasifleştirir. |
+| `POST /api/v1/admin/sources/{id}/reindex` | MinIO'daki asıl dosyayı tekrar okuyup mevcut chunk'ları atomik olarak yeniler. |
+
+Yeniden indeksleme pasif veya hâlihazırda işlenen kaynaklarda reddedilir. Eski chunk'lar
+bir analiz sonucunda kullanılıyorsa foreign key koruması bunların değiştirilmesini
+engeller ve API çakışma yanıtı verir; böylece mevcut raporların kanıtı bozulmaz.
+
 Buradaki lisans alanları bir iznin kaydını ve kontrol sürecini destekler; kendi başına
 hukuki izin oluşturmaz. Gerçek sözleşme veya izin belgesi güvenli bir yerde ayrıca
 saklanmalı, `license_evidence_reference` ile o kayda işaret edilmelidir.

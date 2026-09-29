@@ -12,11 +12,28 @@ from intihal_api.storage import (
     StorageConnectionError,
     StoredObject,
     build_document_storage_key,
+    build_source_storage_key,
 )
 
 
 class FakeWriteResult:
     etag = "fake-etag"
+
+
+class FakeReadResult:
+    def __init__(self, content: bytes) -> None:
+        self.content = content
+        self.closed = False
+        self.released = False
+
+    def read(self) -> bytes:
+        return self.content
+
+    def close(self) -> None:
+        self.closed = True
+
+    def release_conn(self) -> None:
+        self.released = True
 
 
 class FakeBucketClient:
@@ -34,6 +51,8 @@ class FakeBucketClient:
         self.make_bucket_calls: list[str] = []
         self.put_object_calls: list[tuple[str, str, bytes, int, str]] = []
         self.remove_object_calls: list[tuple[str, str]] = []
+        self.get_object_calls: list[tuple[str, str]] = []
+        self.read_result = FakeReadResult(b"stored content")
 
     def bucket_exists(self, bucket_name: str) -> bool:
         self.bucket_exists_calls.append(bucket_name)
@@ -60,6 +79,10 @@ class FakeBucketClient:
 
     def remove_object(self, bucket_name: str, object_name: str) -> None:
         self.remove_object_calls.append((bucket_name, object_name))
+
+    def get_object(self, bucket_name: str, object_name: str) -> FakeReadResult:
+        self.get_object_calls.append((bucket_name, object_name))
+        return self.read_result
 
 
 def s3_error(code: str) -> S3Error:
@@ -132,6 +155,12 @@ def test_document_storage_key_is_stable_unique_and_filename_free() -> None:
     assert ".." not in first_key
 
 
+def test_source_storage_key_is_stable_and_filename_free() -> None:
+    source_id = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+
+    assert build_source_storage_key(source_id) == "sources/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+
 def test_object_upload_returns_storage_identity_and_rewinds_stream() -> None:
     client = FakeBucketClient(exists=True)
     service = ObjectStorageService(client, "intihal-documents")
@@ -168,6 +197,18 @@ def test_object_removal_uses_configured_bucket() -> None:
     service.remove_object("documents/owner/document")
 
     assert client.remove_object_calls == [("intihal-documents", "documents/owner/document")]
+
+
+def test_object_download_returns_bytes_and_releases_connection() -> None:
+    client = FakeBucketClient(exists=True)
+    service = ObjectStorageService(client, "intihal-documents")
+
+    content = service.download_object("sources/source-id")
+
+    assert content == b"stored content"
+    assert client.get_object_calls == [("intihal-documents", "sources/source-id")]
+    assert client.read_result.closed is True
+    assert client.read_result.released is True
 
 
 def test_application_lifespan_initializes_storage() -> None:

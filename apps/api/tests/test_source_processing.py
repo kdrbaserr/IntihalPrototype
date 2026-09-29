@@ -17,6 +17,7 @@ class FakeSession:
         self.added: list[object] = []
         self.commit_calls = 0
         self.rollback_calls = 0
+        self.execute_calls = 0
         self.commit_error_at = commit_error_at
 
     def add_all(self, instances: list[object]) -> None:
@@ -29,6 +30,10 @@ class FakeSession:
 
     async def rollback(self) -> None:
         self.rollback_calls += 1
+
+    async def execute(self, statement: object) -> object:
+        self.execute_calls += 1
+        return object()
 
 
 def make_source() -> SourceDocument:
@@ -73,6 +78,7 @@ async def test_source_document_uses_canonical_normalization_and_chunk_contract()
     assert source.status is SourceDocumentStatus.READY
     assert session.commit_calls == 2
     assert session.rollback_calls == 0
+    assert session.execute_calls == 1
 
 
 @pytest.mark.anyio

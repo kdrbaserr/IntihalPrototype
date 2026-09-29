@@ -3,7 +3,7 @@
 import asyncio
 
 from intihal_api.core.config import get_settings
-from intihal_api.db.models import User
+from intihal_api.db.models import User, UserRole
 from intihal_api.db.session import AsyncSessionFactory, engine
 
 
@@ -20,11 +20,14 @@ async def seed_local_demo_user() -> None:
                     id=settings.demo_user_id,
                     email="demo@intihal.local",
                     display_name="Yerel Demo Kullanıcısı",
+                    role=UserRole.ADMIN,
                 )
             )
             await session.commit()
             print(f"Created local demo user: {settings.demo_user_id}")
         else:
+            user.role = UserRole.ADMIN
+            await session.commit()
             print(f"Local demo user already exists: {settings.demo_user_id}")
 
 

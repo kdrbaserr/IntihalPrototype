@@ -43,6 +43,14 @@ class ObjectWriteResult(Protocol):
     etag: str
 
 
+class ObjectReadResult(Protocol):
+    def read(self) -> bytes: ...
+
+    def close(self) -> None: ...
+
+    def release_conn(self) -> None: ...
+
+
 class StorageClient(Protocol):
     """MinIO operations used by the application storage adapter."""
 
@@ -60,6 +68,8 @@ class StorageClient(Protocol):
     ) -> ObjectWriteResult: ...
 
     def remove_object(self, bucket_name: str, object_name: str) -> None: ...
+
+    def get_object(self, bucket_name: str, object_name: str) -> ObjectReadResult: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,11 +160,35 @@ class ObjectStorageService:
                 "Dosya depolama servisine şu anda ulaşılamıyor."
             ) from error
 
+    def download_object(self, key: str) -> bytes:
+        """Read one stored object fully and always release the HTTP connection."""
+
+        response: ObjectReadResult | None = None
+        try:
+            response = self.client.get_object(self.bucket_name, key)
+            return response.read()
+        except S3Error as error:
+            raise self._translate_s3_error(error) from error
+        except (HTTPError, OSError, TimeoutError) as error:
+            raise StorageConnectionError(
+                "Dosya depolama servisine şu anda ulaşılamıyor."
+            ) from error
+        finally:
+            if response is not None:
+                response.close()
+                response.release_conn()
+
 
 def build_document_storage_key(owner_id: UUID, document_id: UUID) -> str:
     """Build a stable object key without using the untrusted original filename."""
 
     return f"documents/{owner_id.hex}/{document_id.hex}"
+
+
+def build_source_storage_key(source_document_id: UUID) -> str:
+    """Build a stable object key for a licensed corpus source."""
+
+    return f"sources/{source_document_id.hex}"
 
 
 def create_object_storage_service(settings: Settings) -> ObjectStorageService:

@@ -30,6 +30,13 @@ class UserStatus(enum.StrEnum):
     DISABLED = "disabled"
 
 
+class UserRole(enum.StrEnum):
+    """Authorization role assigned to an application account."""
+
+    USER = "user"
+    ADMIN = "admin"
+
+
 class DocumentStatus(enum.StrEnum):
     """Lifecycle state of a document and its analysis."""
 
@@ -90,6 +97,12 @@ class User(BaseModel):
         default=UserStatus.ACTIVE,
         server_default=UserStatus.ACTIVE.value,
         index=True,
+        nullable=False,
+    )
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="user_role", values_callable=lambda values: [v.value for v in values]),
+        default=UserRole.USER,
+        server_default=UserRole.USER.value,
         nullable=False,
     )
 

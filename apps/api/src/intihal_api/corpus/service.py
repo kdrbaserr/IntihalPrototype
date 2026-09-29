@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import BinaryIO, Protocol
 
+from sqlalchemy import delete
 from starlette.concurrency import run_in_threadpool
 
 from intihal_api.db.models import SourceChunk, SourceDocument, SourceDocumentStatus
@@ -21,6 +22,8 @@ class SourceProcessingSession(Protocol):
     async def commit(self) -> None: ...
 
     async def rollback(self) -> None: ...
+
+    async def execute(self, statement: object) -> object: ...
 
 
 class UnsupportedSourceContentTypeError(ValueError):
@@ -66,13 +69,20 @@ class SourceDocumentProcessingService:
             )
             for chunk in chunked_text.chunks
         ]
-        session.add_all(chunks)
-        source_document.status = SourceDocumentStatus.READY
-
         try:
+            await session.execute(
+                delete(SourceChunk).where(SourceChunk.source_document_id == source_document.id)
+            )
+            session.add_all(chunks)
+            source_document.status = SourceDocumentStatus.READY
             await session.commit()
         except Exception:
             await session.rollback()
+            source_document.status = SourceDocumentStatus.FAILED
+            try:
+                await session.commit()
+            except Exception:
+                await session.rollback()
             raise
 
         return chunked_text

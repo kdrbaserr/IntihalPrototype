@@ -27,6 +27,7 @@ EXPECTED_TABLES = {
 }
 EXPECTED_ENUMS = {
     "user_status",
+    "user_role",
     "document_status",
     "source_document_status",
     "license_status",
