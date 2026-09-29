@@ -76,7 +76,7 @@ async def create_source_document(
 ) -> SourceDocument:
     service = SourceDocumentIngestionService(storage)
     try:
-        return await service.create_source(
+        source = await service.create_source(
             metadata=SourceMetadata(
                 title=title,
                 author=author,
@@ -95,6 +95,8 @@ async def create_source_document(
             stream=file.file,
             session=session,
         )
+        await session.refresh(source)
+        return source
     except UploadValidationError as error:
         raise HTTPException(
             status_code=error.status_code,
@@ -156,6 +158,7 @@ async def disable_source_document(
     source = await _get_source_or_404(source_id, session)
     source.status = SourceDocumentStatus.DISABLED
     await session.commit()
+    await session.refresh(source)
     return source
 
 
@@ -194,6 +197,7 @@ async def reindex_source_document(
             stream=BytesIO(content),
             session=session,
         )
+        await session.refresh(source)
         return source
     except StorageError as error:
         raise _storage_unavailable(error) from error
