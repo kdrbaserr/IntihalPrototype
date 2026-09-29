@@ -197,6 +197,68 @@ Bir eşleşmenin `method` alanı nasıl bulunduğunu belirtir: `exact` birebir m
 yöntemin birlikte kullanılmasıdır. `similarity_score` 0 ile 1 arasındadır. Bu puan
 tek başına “intihal var” kararı değildir; raporda incelenmesi gereken benzerliği gösterir.
 
+Klasik hibrit puan; kelime TF-IDF, karakter TF-IDF ve açıklanabilir kelime kümesi
+örtüşmesini birleştirir. Ağırlıklar sırasıyla `INTIHAL_WORD_TFIDF_WEIGHT`,
+`INTIHAL_CHARACTER_TFIDF_WEIGHT` ve `INTIHAL_WORD_OVERLAP_WEIGHT` ayarlarından okunur;
+toplamları tam olarak `1` değilse uygulama geçersiz config ile başlamaz. Varsayılan dağılım
+`0.50 / 0.30 / 0.20` değerleridir.
+
+Yeni analiz kaydı oluşturulurken `INTIHAL_ALGORITHM_VERSION` ve
+`INTIHAL_SIMILARITY_THRESHOLD` değerlerinin ikisi de `analyses` tablosuna kopyalanır.
+Sonradan config değişse bile eski analiz kendi sürüm ve eşik bilgisini korur. Ağırlık veya
+skor davranışı değiştirildiğinde algoritma sürümü de ayrıca artırılmalıdır.
+
+### Genel benzerlik oranı
+
+Genel oran, tek tek eşleşme skorlarının ortalaması değildir. Eşleşmelerin normalize
+edilmiş kullanıcı belgesi üzerindeki `[başlangıç, bitiş)` karakter aralıkları sıralanır;
+aynı, iç içe, bitişik veya çakışan aralıklar birleştirilir. Yalnızca birleşim içindeki
+benzersiz karakterler belge uzunluğuna bölünür:
+
+```text
+genel benzerlik = benzersiz eşleşen karakter sayısı / toplam belge karakteri
+```
+
+Örneğin `[10, 30)` ve `[20, 40)` aralıkları toplam 40 karakter sayılmaz. Birleşimleri
+`[10, 40)` olduğu için yalnızca 30 karakter sayılır. Böylece aynı metin bölgesini bulan
+farklı kaynaklar veya yöntemler genel oranı yapay olarak yükseltmez. Hesaplama sonucu
+`0–1` oranını, yüzde karşılığını, ham eşleşme sayısını, benzersiz eşleşen karakter
+sayısını ve birleştirilmiş kanıt aralıklarını birlikte döndürür.
+
+### Sürümlü benzerlik örnekleri
+
+Algoritmanın beklenen davranışı `tests/fixtures/similarity/benchmark-v1.json` dosyasında
+sürümlenir. Veri seti; birebir, küçük değişiklikli, ortak akademik kalıp içeren ve
+ilgisiz metin çiftlerini birlikte tutar. Her örnekte değişmeyen bir kimlik, kullanım
+amacı, beklenen skor, kabul aralığı ve eşik kararı bulunur.
+
+Fixture içindeki `dataset_version` metinlerin ve beklentilerin sürümünü;
+`algorithm_version` ise bu skorları üreten algoritmayı belirtir. Ağırlıklar ve eşik de
+fixture içine kopyalandığı için test sonucu geliştiricinin yerel `.env` ayarlarından
+etkilenmez. Algoritmanın bilinçli biçimde değiştirildiği durumda mevcut beklentilerin
+üzerine sessizce yazmak yerine yeni fixture sürümü oluşturulmalıdır. Böylece eski ve
+yeni davranış karşılaştırılabilir ve skor değişiminin nedeni denetlenebilir kalır.
+
+Benchmark testleri bütün `benchmark-v*.json` dosyalarını otomatik keşfeder. Her sürümde
+skor bantlarının `0–1` içinde olduğu, kategorilerin bantlarının birbirine girmediği ve
+eşik kararının bandın tamamında değişmeden kaldığı doğrulanır. Örneğin `match` beklenen
+bir vakanın yalnızca golden skoru değil, kabul bandının alt sınırı da eşikten düşük
+olamaz. Böylece küçük sayısal oynamalar eşik kararını sessizce tersine çeviremez.
+
+En yeni benchmark ayrıca uygulamanın varsayılan algoritma sürümü, ağırlıkları ve eşiğiyle
+birebir eşleşmek zorundadır. Yeni bir fixture eklendiğinde testler onu ek test kodu
+gerektirmeden çalıştırır. Skor formülü veya varsayılan ağırlıklar bilinçli olarak
+değiştirilecekse izlenecek yol şudur:
+
+1. `INTIHAL_ALGORITHM_VERSION` varsayılanını artırın.
+2. Eski fixture'ı koruyup bir sonraki `benchmark-vN.json` dosyasını oluşturun.
+3. Yeni ağırlık, eşik, golden skor ve kabul bantlarını yeni sürüme yazın.
+4. Değişimin gerekçesini fixture içindeki `purpose` alanlarında ve değişiklik kaydında
+   açıklayın.
+
+Bu sözleşmeler normal `pytest` paketi içinde çalıştığı için CI, sürümlenmemiş veya kabul
+aralıklarını bozan algoritma değişikliklerini birleştirmeden önce durdurur.
+
 Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
 belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
 Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
