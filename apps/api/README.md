@@ -208,6 +208,23 @@ Yeni analiz kaydı oluşturulurken `INTIHAL_ALGORITHM_VERSION` ve
 Sonradan config değişse bile eski analiz kendi sürüm ve eşik bilgisini korur. Ağırlık veya
 skor davranışı değiştirildiğinde algoritma sürümü de ayrıca artırılmalıdır.
 
+### Genel benzerlik oranı
+
+Genel oran, tek tek eşleşme skorlarının ortalaması değildir. Eşleşmelerin normalize
+edilmiş kullanıcı belgesi üzerindeki `[başlangıç, bitiş)` karakter aralıkları sıralanır;
+aynı, iç içe, bitişik veya çakışan aralıklar birleştirilir. Yalnızca birleşim içindeki
+benzersiz karakterler belge uzunluğuna bölünür:
+
+```text
+genel benzerlik = benzersiz eşleşen karakter sayısı / toplam belge karakteri
+```
+
+Örneğin `[10, 30)` ve `[20, 40)` aralıkları toplam 40 karakter sayılmaz. Birleşimleri
+`[10, 40)` olduğu için yalnızca 30 karakter sayılır. Böylece aynı metin bölgesini bulan
+farklı kaynaklar veya yöntemler genel oranı yapay olarak yükseltmez. Hesaplama sonucu
+`0–1` oranını, yüzde karşılığını, ham eşleşme sayısını, benzersiz eşleşen karakter
+sayısını ve birleştirilmiş kanıt aralıklarını birlikte döndürür.
+
 Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
 belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
 Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
