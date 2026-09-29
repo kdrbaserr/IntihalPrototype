@@ -1,6 +1,10 @@
+from decimal import Decimal
+
+import pytest
+from pydantic import ValidationError
 from pytest import MonkeyPatch
 
-from intihal_api.core.config import get_settings
+from intihal_api.core.config import Settings, get_settings
 
 
 def test_settings_are_loaded_from_prefixed_environment(
@@ -28,3 +32,24 @@ def test_settings_are_loaded_from_prefixed_environment(
         assert settings.minio_bucket == "test-documents"
     finally:
         get_settings.cache_clear()
+
+
+def test_similarity_configuration_defaults_are_normalized() -> None:
+    settings = Settings(_env_file=None)
+
+    assert settings.algorithm_version == "classical-hybrid-v1"
+    assert settings.similarity_threshold == Decimal("0.8000")
+    assert (
+        settings.word_tfidf_weight + settings.character_tfidf_weight + settings.word_overlap_weight
+        == Decimal("1")
+    )
+
+
+def test_similarity_weights_must_add_up_to_one() -> None:
+    with pytest.raises(ValidationError, match="similarity weights must add up to exactly 1"):
+        Settings(
+            _env_file=None,
+            word_tfidf_weight=Decimal("0.50"),
+            character_tfidf_weight=Decimal("0.30"),
+            word_overlap_weight=Decimal("0.30"),
+        )

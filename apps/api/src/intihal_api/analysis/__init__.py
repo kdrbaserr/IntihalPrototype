@@ -7,6 +7,11 @@ from intihal_api.analysis.character import (
     generate_character_ngrams,
     normalize_for_character_ngrams,
 )
+from intihal_api.analysis.hybrid import (
+    HybridSimilarityResult,
+    SimilarityWeights,
+    calculate_hybrid_similarity,
+)
 from intihal_api.analysis.lexical import (
     SparseVector,
     TfidfModel,
@@ -17,12 +22,17 @@ from intihal_api.analysis.lexical import (
     word_ngram_cosine_similarity,
 )
 from intihal_api.analysis.overlap import WordOverlapResult, calculate_word_overlap
+from intihal_api.analysis.service import AnalysisService
 
 __all__ = [
+    "AnalysisService",
     "CharacterTfidfModel",
+    "HybridSimilarityResult",
+    "SimilarityWeights",
     "SparseVector",
     "TfidfModel",
     "WordOverlapResult",
+    "calculate_hybrid_similarity",
     "calculate_word_overlap",
     "character_ngram_cosine_similarity",
     "cosine_similarity",

@@ -197,6 +197,17 @@ Bir eşleşmenin `method` alanı nasıl bulunduğunu belirtir: `exact` birebir m
 yöntemin birlikte kullanılmasıdır. `similarity_score` 0 ile 1 arasındadır. Bu puan
 tek başına “intihal var” kararı değildir; raporda incelenmesi gereken benzerliği gösterir.
 
+Klasik hibrit puan; kelime TF-IDF, karakter TF-IDF ve açıklanabilir kelime kümesi
+örtüşmesini birleştirir. Ağırlıklar sırasıyla `INTIHAL_WORD_TFIDF_WEIGHT`,
+`INTIHAL_CHARACTER_TFIDF_WEIGHT` ve `INTIHAL_WORD_OVERLAP_WEIGHT` ayarlarından okunur;
+toplamları tam olarak `1` değilse uygulama geçersiz config ile başlamaz. Varsayılan dağılım
+`0.50 / 0.30 / 0.20` değerleridir.
+
+Yeni analiz kaydı oluşturulurken `INTIHAL_ALGORITHM_VERSION` ve
+`INTIHAL_SIMILARITY_THRESHOLD` değerlerinin ikisi de `analyses` tablosuna kopyalanır.
+Sonradan config değişse bile eski analiz kendi sürüm ve eşik bilgisini korur. Ağırlık veya
+skor davranışı değiştirildiğinde algoritma sürümü de ayrıca artırılmalıdır.
+
 Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
 belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
 Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
