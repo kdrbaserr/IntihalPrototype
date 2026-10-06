@@ -34,6 +34,7 @@ describe("DocumentWorkflow", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Karşılaştırılıyor");
     await act(async () => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByRole("status")).toHaveTextContent("Analiz tamamlandı");
+    expect(screen.getByRole("button", { name: "Eşleşmeleri göster" })).toBeInTheDocument();
     const count = fetcher.mock.calls.length;
     await act(async () => vi.advanceTimersByTimeAsync(10000));
     expect(fetcher.mock.calls.length).toBe(count);

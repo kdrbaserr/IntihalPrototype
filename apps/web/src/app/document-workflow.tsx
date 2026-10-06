@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MatchReport } from "./match-report";
 
 const STEPS = ["uploaded", "queued", "extracting", "analyzing", "completed"] as const;
 type DocumentStatus = (typeof STEPS)[number] | "failed";
@@ -151,6 +152,8 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
           {starting ? "Başlatılıyor…" : status === "failed" ? "Analizi yeniden dene" : "Analizi başlat"}
         </button>
       )}
+      {loaded && status === "completed" && analysisId && <MatchReport key={analysisId}
+        analysisId={analysisId} apiBaseUrl={apiBaseUrl} userId={userId} />}
     </section>
   );
 }

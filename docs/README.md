@@ -27,6 +27,7 @@ Burada zamanla şunlar tutulacaktır:
   (`analysis-status-ui.md`).
 - eşleşme aralıkları, kaynak/sayfa bilgileri ve kalıcı skor bileşenleri
   (`match-evidence-api.md`).
+- çakışan aralıkların birleştirilmesi ve skor renkleri (`match-highlighting.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

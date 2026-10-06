@@ -450,6 +450,25 @@ progress::-moz-progress-bar {
 .analysis-error p { margin: 4px 0 0; }
 .analysis-trace { overflow-wrap: anywhere; font-size: .75rem; }
 
+.match-report { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.match-report h3 { margin: 0 0 12px; }
+.match-legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; font-size: .75rem; }
+.match-legend li { padding: 5px 8px; border-radius: 6px; }
+.match-note, .match-pages { color: var(--muted); font-size: .8rem; line-height: 1.6; }
+.match-card { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.match-heading { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; font-size: .85rem; }
+.match-heading > span { color: var(--muted); font-size: .75rem; }
+.match-card blockquote { margin: 12px 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
+.match-card mark { color: inherit; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.match-report [data-level="low"]:is(mark, li) { color: #684e00; background: #fff3c4; }
+.match-report [data-level="medium"]:is(mark, li) { color: #7c3500; background: #ffe0bd; }
+.match-report [data-level="high"]:is(mark, li) { color: #822525; background: #ffd5d5; }
+.match-card summary { cursor: pointer; font-size: .85rem; color: var(--brand-dark); }
+.match-sources { padding-left: 20px; font-size: .8rem; overflow-wrap: anywhere; }
+.match-sources > li { margin-top: 16px; }
+.match-sources p { margin: 5px 0; color: var(--muted); }
+.match-sources a { color: var(--brand-dark); text-decoration: underline; }
+
 .section-heading h2 {
   margin: 10px 0 32px;
   font-size: clamp(1.75rem, 3vw, 2.5rem);
