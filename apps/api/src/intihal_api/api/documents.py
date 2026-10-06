@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from intihal_api.api.analysis_schemas import AnalysisResponse
 from intihal_api.api.dependencies import CurrentUser, DatabaseSession, ObjectStorage
+from intihal_api.api.document_access import owned_document
 from intihal_api.core.config import get_settings
 from intihal_api.db.models import Document, DocumentStatus
 from intihal_api.jobs.workflow import queue_document
@@ -34,18 +36,6 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     failure_reason: str | None = None
-
-
-class AnalysisResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    document_id: UUID
-    status: str
-    algorithm_version: str
-    started_at: datetime | None
-    completed_at: datetime | None
-    failure_reason: str | None
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
@@ -109,20 +99,6 @@ async def list_documents(
         .limit(limit)
     )
     return list(documents)
-
-
-async def owned_document(document_id, current_user, session, *, lock=False) -> Document:
-    statement = select(Document).where(
-        Document.id == document_id,
-        Document.owner_id == current_user.id,
-        Document.status != DocumentStatus.DELETED,
-    )
-    if lock:
-        statement = statement.with_for_update()
-    document = await session.scalar(statement)
-    if document is None:
-        raise HTTPException(status_code=404, detail="Belge bulunamadı.")
-    return document
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)

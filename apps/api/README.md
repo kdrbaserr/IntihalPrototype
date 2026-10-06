@@ -58,6 +58,15 @@ analiz başlatma endpoint'i ve worker akışı
 
 ## Ayarlar
 
+Analiz oluşturma, durum sorgulama ve sayfalı eşleşme endpointleri:
+
+- `POST /api/v1/analyses` (`{"document_id": "UUID"}`)
+- `GET /api/v1/analyses/{analysis_id}`
+- `GET /api/v1/analyses/{analysis_id}/matches?limit=20&offset=0`
+
+Yanıt alanları, erişim kontrolü, hata kodları ve örnek istekler
+[`analysis-api.md`](../../docs/analysis-api.md) içinde açıklanır.
+
 Uygulama ayarları `INTIHAL_` önekli ortam değişkenlerinden okunur. Yerel
 geliştirmede `.env.example` dosyasını `.env` adıyla kopyalayıp değerleri
 değiştirebilirsiniz. `.env` Git tarafından takip edilmez.

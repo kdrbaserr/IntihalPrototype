@@ -16,6 +16,8 @@ Burada zamanla şunlar tutulacaktır:
   (`worker-queues.md`).
 - belge durum zinciri, worker entegrasyonu ve ⭐ mühendislik notları
   (`document-workflow.md`).
+- analiz oluşturma, durum sorgulama, eşleşme endpointleri ve ⭐ API notları
+  (`analysis-api.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.
