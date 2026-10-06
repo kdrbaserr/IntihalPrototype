@@ -257,6 +257,7 @@ def test_match_links_analysis_and_both_evidence_chunks() -> None:
         "source_chunk_id",
         "method",
         "similarity_score",
+        "score_components",
         "document_match_start",
         "document_match_end",
         "source_match_start",

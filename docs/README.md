@@ -25,6 +25,8 @@ Burada zamanla şunlar tutulacaktır:
   (`worker-resilience-tests.md`).
 - kuyruk, metin çıkarma, analiz ve hata durumlarının kullanıcıya gösterimi
   (`analysis-status-ui.md`).
+- eşleşme aralıkları, kaynak/sayfa bilgileri ve kalıcı skor bileşenleri
+  (`match-evidence-api.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

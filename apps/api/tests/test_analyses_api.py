@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
@@ -88,12 +89,14 @@ def test_matches_include_paginated_evidence_and_correct_global_offsets():
             chunk = await session.get(DocumentChunk, matches[0].document_chunk_id)
             chunk.char_start += 100
             chunk.char_end += 100
+            chunk.page_number = 2
             for match in matches:
                 match.document_match_start += 100
                 match.document_match_end += 100
                 source = await session.get(SourceChunk, match.source_chunk_id)
                 source.char_start += 200
                 source.char_end += 200
+                source.page_number = 5
                 match.source_match_start += 200
                 match.source_match_end += 200
             await session.commit()
@@ -101,12 +104,28 @@ def test_matches_include_paginated_evidence_and_correct_global_offsets():
             full = (await client.get(url, headers=headers)).json()
             assert full["total"] == 2
             assert len(full["items"]) == 2
+            assert full["offset_unit"] == "unicode_code_points"
+            assert full["range_convention"] == "start_inclusive_end_exclusive"
             for item in full["items"]:
                 assert item["document"]["text"] == item["source"]["text"] == CONTENT[:-1]
                 assert item["document"]["char_start"] == 100
                 assert item["source"]["char_start"] == 200
                 assert item["source"]["license_name"] == "CC0"
                 assert item["similarity_score"] == "1.0000"
+                assert item["document"]["page_number"] == 2
+                assert item["source"]["page_number"] == 5
+                assert item["source"]["original_filename"] == "source.txt"
+                components = item["score_components"]
+                assert components["scope"] == "chunk_pair"
+                assert components["algorithm_version"] == analysis.algorithm_version
+                for signal, weight in (
+                    ("word_tfidf", "0.50"),
+                    ("character_tfidf", "0.30"),
+                    ("word_overlap", "0.20"),
+                ):
+                    assert Decimal(components[signal]["score"]) == 1
+                    assert Decimal(components[signal]["weight"]) == Decimal(weight)
+                    assert Decimal(components[signal]["contribution"]) == Decimal(weight)
                 assert "storage_key" not in item["source"]
             first = (await client.get(url + "?limit=1", headers=headers)).json()
             second = (await client.get(url + "?limit=1&offset=1", headers=headers)).json()
@@ -116,6 +135,73 @@ def test_matches_include_paginated_evidence_and_correct_global_offsets():
             assert (await client.get(created.headers["Location"], headers=headers)).json()[
                 "status"
             ] == "completed"
+
+    asyncio.run(scenario())
+
+
+def test_components_preserve_snapshot_and_unicode_ranges_without_recalculation(monkeypatch):
+    async def scenario():
+        async with api() as (client, session, document, headers, _):
+            await seed_source(session)
+            created = await client.post(
+                "/api/v1/analyses", json={"document_id": str(document.id)}, headers=headers
+            )
+            analysis = await session.get(Analysis, UUID(created.json()["id"]))
+            await session.refresh(document)
+            await extract_document(document, analysis, session, StoredContent())
+            chunk = await session.scalar(select(DocumentChunk))
+            chunk.content = "😀 " + chunk.content + " Yeni bağımsız açıklamalar eklendi."
+            chunk.char_end = len(chunk.content)
+            analysis.similarity_threshold = Decimal("0")
+            analysis.config_snapshot = {
+                **analysis.config_snapshot,
+                "similarity_threshold": "0",
+                "word_tfidf_weight": "0.10",
+                "character_tfidf_weight": "0.20",
+                "word_overlap_weight": "0.70",
+            }
+            await session.commit()
+            await analyze_document(document, analysis, session, Settings(_env_file=None))
+
+            def unexpected_recalculation(*args, **kwargs):
+                pytest.fail("GET must read persisted signals without recalculating")
+
+            monkeypatch.setattr(
+                "intihal_api.jobs.workflow.calculate_hybrid_similarity", unexpected_recalculation
+            )
+            result = await client.get(created.headers["Location"] + "/matches", headers=headers)
+            assert result.status_code == 200
+            item = result.json()["items"][0]
+            assert (
+                item["document"]["char_start"] == 2
+            )  # emoji is one code point, not two UTF-16 units
+            assert (
+                chunk.content[item["document"]["char_start"] : item["document"]["char_end"]]
+                == (item["document"]["text"])
+            )
+            assert item["document"]["page_number"] is None
+            assert item["source"]["page_number"] is None
+            components = item["score_components"]
+            total = Decimal(0)
+            for signal, weight in (
+                ("word_tfidf", "0.10"),
+                ("character_tfidf", "0.20"),
+                ("word_overlap", "0.70"),
+            ):
+                value = components[signal]
+                assert Decimal(value["weight"]) == Decimal(weight)
+                assert Decimal(value["contribution"]) == Decimal(value["score"]) * Decimal(weight)
+                assert 0 <= Decimal(value["score"]) < 1
+                total += Decimal(value["contribution"])
+            assert total.quantize(Decimal("0.0001")) == Decimal(item["similarity_score"])
+            # Existing matches without stored components remain readable.
+            stored = await session.scalar(select(Match))
+            stored.score_components = None
+            await session.commit()
+            legacy = await client.get(created.headers["Location"] + "/matches", headers=headers)
+            assert legacy.status_code == 200
+            assert legacy.json()["items"][0]["score_components"] is None
+            assert legacy.json()["items"][0]["document"] == item["document"]
 
     asyncio.run(scenario())
 
