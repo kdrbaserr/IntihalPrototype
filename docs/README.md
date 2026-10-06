@@ -21,6 +21,8 @@ Burada zamanla şunlar tutulacaktır:
 - güvenli hata kodları, takip kodu, ayrıntılı log trace ve ⭐ mühendislik notları
   (`error-handling.md`).
 - çift tıklama koruması, kontrollü manuel retry ve ⭐ notlar (`analysis-retry.md`).
+- başarı, timeout, worker kesintisi ve retry senaryo testleri
+  (`worker-resilience-tests.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.
