@@ -11,7 +11,9 @@ Burada zamanla şunlar tutulacaktır:
 - izinli kaynak havuzu kuralları,
 - kabul edilen lisanslar ve yasak veri toplama davranışları
   (`source-acquisition-policy.md`),
-- algoritmanın sınırları ve değerlendirme sonuçları.
+- algoritmanın sınırları ve değerlendirme sonuçları,
+- worker, kuyruklar, timeout/retry politikası ve mühendislik notları
+  (`worker-queues.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

@@ -29,7 +29,7 @@ Script şu sırayı izler:
 2. `.env` yoksa `.env.example` dosyasını kopyalar; varsa mevcut ayarları korur.
 3. Compose dosyasını ve ortam değişkenlerini doğrular.
 4. API ve web image'larını build eder.
-5. PostgreSQL, Redis, MinIO, API ve web servislerini başlatır.
+5. PostgreSQL, Redis, MinIO, API, Celery worker ve web servislerini başlatır.
 6. Healthcheck'ler başarılı olana kadar en fazla 300 saniye bekler.
 
 ## `.env.example` ve `.env` farkı
@@ -89,6 +89,10 @@ docker compose up -d --build --wait
 kullanılmalıdır.
 
 ## Sorun giderme
+
+Worker komutları, kuyruk isimleri ve timeout/retry politikası için
+[worker notlarına](worker-queues.md) bak. Worker kod değişikliklerinde otomatik
+reload yapmaz; `docker compose restart worker` gerekir.
 
 - `docker info` hata veriyorsa Docker Desktop henüz çalışmıyordur.
 - Bir port kullanımda hatası alırsan `.env` içindeki ilgili dış portu değiştir.

@@ -50,6 +50,12 @@ docker compose up -d --build
 API kaynak kodu geliştirme container'ına bind volume olarak bağlanır. Uvicorn
 değişiklikleri algılar ve uygulamayı otomatik olarak yeniden yükler.
 
+Celery worker da Compose ile başlar. Kuyruk isimleri, timeout ve retry politikası,
+çalıştırma komutları ve mühendislik notları için
+[`worker-queues.md`](../../docs/worker-queues.md) dosyasına bakın. Bu aşamada worker
+altyapısı ve healthcheck görevi hazırdır; belge ve analiz görevleri henüz endpoint
+akışına bağlanmamıştır.
+
 ## Ayarlar
 
 Uygulama ayarları `INTIHAL_` önekli ortam değişkenlerinden okunur. Yerel
