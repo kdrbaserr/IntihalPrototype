@@ -28,7 +28,13 @@ from intihal_api.db.models import (
 from intihal_api.db.session import get_db_session
 from intihal_api.jobs.runtime import fail_document, failure_code, is_transient
 from intihal_api.jobs.states import InvalidDocumentTransition, transition_document
-from intihal_api.jobs.workflow import analyze_document, extract_document, queue_document
+from intihal_api.jobs.workflow import (
+    AnalysisRetryError,
+    analyze_document,
+    extract_document,
+    queue_document,
+    retry_document,
+)
 from intihal_api.main import create_app
 from intihal_api.storage import StorageAuthenticationError, StorageConnectionError
 
@@ -158,7 +164,12 @@ def test_failed_workflow_can_start_a_new_run_without_faking_completion():
             await fail_document(document, original, session, "stored_document_changed")
             assert document.status is DocumentStatus.FAILED
             assert original.status is AnalysisStatus.FAILED
-            new = await queue_document(document, session, settings)
+            assert (await queue_document(document, session, settings)).id == original.id
+            with pytest.raises(AnalysisRetryError, match="analysis_retry_not_allowed"):
+                await retry_document(document, original, session, settings)
+            document.failure_reason = original.failure_reason = "processing_failed"
+            await session.commit()
+            new = await retry_document(document, original, session, settings)
             assert new.id != original.id
             assert document.failure_reason is None
             await extract_document(document, new, session, StoredContent())

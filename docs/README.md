@@ -20,6 +20,7 @@ Burada zamanla şunlar tutulacaktır:
   (`analysis-api.md`).
 - güvenli hata kodları, takip kodu, ayrıntılı log trace ve ⭐ mühendislik notları
   (`error-handling.md`).
+- çift tıklama koruması, kontrollü manuel retry ve ⭐ notlar (`analysis-retry.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

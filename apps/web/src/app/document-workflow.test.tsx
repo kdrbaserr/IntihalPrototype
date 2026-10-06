@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DocumentWorkflow } from "./document-workflow";
 
 function response(status: string, failure_reason: string | null = null) {
-  return { ok: true, json: async () => ({ status, failure_reason }) };
+  return { ok: true, json: async () => ({ status, failure_reason,
+    id: "analysis-id", latest_analysis_id: "analysis-id" }) };
 }
 
 describe("DocumentWorkflow", () => {
@@ -38,12 +39,51 @@ describe("DocumentWorkflow", () => {
     expect(fetcher.mock.calls.length).toBe(count);
   });
 
-  it("shows a failed job and provides an explicit retry", async () => {
+  it("requires a new upload for OCR rather than offering a useless retry", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response("failed", "ocr_required")));
     await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
     expect(screen.getByRole("status")).toHaveTextContent("Analiz başarısız");
     expect(screen.getByRole("alert")).toHaveTextContent("OCR");
-    expect(screen.getByRole("button", { name: "Analizi yeniden dene" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Analizi yeniden dene" })).not.toBeInTheDocument();
+  });
+
+  it("sends only one request when clicked twice before React renders", async () => {
+    let complete!: (value: ReturnType<typeof response>) => void;
+    const fetcher = vi.fn().mockResolvedValueOnce(response("uploaded"))
+      .mockImplementationOnce(() => new Promise((resolve) => { complete = resolve; }))
+      .mockResolvedValue(response("queued"));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    const button = screen.getByRole("button", { name: "Analizi başlat" });
+    act(() => { fireEvent.click(button); fireEvent.click(button); });
+    expect(fetcher.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
+    expect(button).toBeDisabled();
+    await act(async () => complete(response("queued")));
+    expect(screen.getByRole("status")).toHaveTextContent("Kuyrukta");
+  });
+
+  it("uses the failed analysis ID for retry and shows the server limit message", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response("failed", "retry_exhausted"))
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ detail: {
+        code: "analysis_retry_limit", message: "Bu belge için yeniden deneme sınırına ulaşıldı.",
+      } }) });
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Analizi yeniden dene" })));
+    expect(fetcher).toHaveBeenLastCalledWith("/api/v1/analyses/analysis-id/retry", {
+      method: "POST", headers: { "X-User-ID": "owner" },
+    });
+    expect(screen.getAllByRole("alert").some((item) => item.textContent?.includes("sınırına"))).toBe(true);
+    expect(screen.getByRole("status")).toHaveTextContent("Analiz başarısız");
+  });
+
+  it("does not mark an existing failed analysis as queued after a repeated start", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response("uploaded"))
+      .mockResolvedValue(response("failed", "processing_failed"));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Analizi başlat" })));
+    expect(screen.getByRole("status")).toHaveTextContent("Analiz başarısız");
   });
 
   it("does not present a connection failure as document failure", async () => {

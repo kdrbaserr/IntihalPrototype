@@ -176,7 +176,9 @@ def test_failed_run_keeps_its_status_when_the_document_is_requeued():
             original = await session.get(Analysis, UUID(created.json()["id"]))
             await session.refresh(document)
             await fail_document(document, original, session, "processing_failed")
-            new = await client.post("/api/v1/analyses", json=body, headers=headers)
+            repeated = await client.post("/api/v1/analyses", json=body, headers=headers)
+            assert repeated.json()["id"] == created.json()["id"]
+            new = await client.post(created.headers["Location"] + "/retry", headers=headers)
             assert new.json()["id"] != created.json()["id"]
             history = (await client.get(created.headers["Location"], headers=headers)).json()
             assert history["status"] == "failed"

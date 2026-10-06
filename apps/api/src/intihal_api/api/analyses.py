@@ -28,7 +28,7 @@ from intihal_api.db.models import (
     SourceDocument,
     User,
 )
-from intihal_api.jobs.workflow import queue_document
+from intihal_api.jobs.workflow import AnalysisRetryError, queue_document, retry_document
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
 
@@ -64,6 +64,24 @@ async def create_analysis(
         analysis = await queue_document(document, session, get_settings())
     except ValueError as error:
         raise HTTPException(status_code=409, detail={"code": "analysis_not_available"}) from error
+    response.headers["Location"] = f"{get_settings().api_v1_prefix}/analyses/{analysis.id}"
+    return analysis
+
+
+@router.post("/{analysis_id}/retry", response_model=AnalysisResponse, status_code=202)
+async def retry_analysis(
+    analysis_id: UUID,
+    response: Response,
+    current_user: CurrentUser,
+    session: DatabaseSession,
+) -> Analysis:
+    failed, document = await owned_analysis(analysis_id, current_user, session)
+    document = await owned_document(document.id, current_user, session, lock=True)
+    await session.refresh(failed)
+    try:
+        analysis = await retry_document(document, failed, session, get_settings())
+    except AnalysisRetryError as error:
+        raise HTTPException(status_code=409, detail={"code": error.code}) from error
     response.headers["Location"] = f"{get_settings().api_v1_prefix}/analyses/{analysis.id}"
     return analysis
 

@@ -9,6 +9,7 @@ yerini tutan geçici geliştirme mekanizmasıdır.
 | İstek | Ne için? | Başarılı cevap |
 | --- | --- | --- |
 | `POST /api/v1/analyses` | Belge için analiz isteğini kabul etmek | `202`, analiz ID'si ve `Location` |
+| `POST /api/v1/analyses/{analysis_id}/retry` | Son başarısız analizi kontrollü yeniden denemek | `202`, yeni/mevcut analiz ID'si |
 | `GET /api/v1/analyses/{analysis_id}` | Belirli analiz kaydını ve durumunu okumak | `200`, analiz ayrıntıları |
 | `GET /api/v1/analyses/{analysis_id}/matches?limit=20&offset=0` | Tamamlanmış analizin kanıtlarını okumak | `200`, sayfalı eşleşmeler |
 
@@ -35,14 +36,17 @@ Yanıtta `id` analiz UUID'si, `document_id` belge UUID'sidir. Ayrıca `status`,
 Yeni istekte durum `queued`, başlangıç/bitiş zamanları `null` olur.
 `Location: /api/v1/analyses/{id}` header'ı takip adresini gösterir.
 
-Aktif veya tamamlanmış analiz için tekrarlanan POST mevcut kaydı döndürür.
-Başarısız belge tekrar başlatılırsa yeni analiz ID'si açılır; önceki hata kaydı
-korunur. Yanıt kodu bu endpoint'te tekrar isteklerde de `202` olur; dönen `status`
+Tekrarlanan başlatma POST'u, başarısız analiz dahil mevcut son kaydı döndürür.
+Başarısız belge yalnız ayrı retry endpointiyle yeni analiz ID'si açabilir;
+önceki hata kaydı korunur. Yanıt kodu tekrar isteklerde de `202` olur; dönen `status`
 analizin zaten tamamlanmış olup olmadığını gösterir.
 
 ⭐ **Not al — 202 Accepted:** İstek kabul edildi, analiz bitmiş olmak zorunda değil.
 `201 Created` yeni kaynağın oluşturulmasını ifade eder; burada asenkron iş kabulü
 API'nin ana davranışı olduğundan `202` kullanıldı.
+
+Kontrollü retry ve çift tıklama davranışının ayrıntıları:
+[⭐ Idempotency ve retry notları](analysis-retry.md).
 
 ⭐ **Not al — Idempotency:** Tekrarlanan aynı başlatma isteği ikinci aktif iş
 üretmez. Belge satır kilidi iki eşzamanlı isteğin birlikte yeni kayıt açmasını

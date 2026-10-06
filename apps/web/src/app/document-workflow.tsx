@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STEPS = ["uploaded", "queued", "extracting", "analyzing", "completed"] as const;
 type DocumentStatus = (typeof STEPS)[number] | "failed";
@@ -17,6 +17,10 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const submitting = useRef(false);
+  const canRetry = analysisId !== null &&
+    ["processing_failed", "processing_timeout", "retry_exhausted"].includes(failure ?? "");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -30,8 +34,13 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
         const document = await response.json();
         if (![...STEPS, "failed"].includes(document.status)) throw new Error("unknown status");
         if (controller.signal.aborted) return;
+        if (submitting.current) {
+          timer = setTimeout(poll, 2000);
+          return;
+        }
         setStatus(document.status);
         setFailure(document.failure_reason ?? null);
+        setAnalysisId(document.latest_analysis_id ?? null);
         setError("");
         if (!["completed", "failed"].includes(document.status)) timer = setTimeout(poll, 2000);
       } catch {
@@ -46,19 +55,32 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
   }, [documentId, apiBaseUrl, userId, refresh]);
 
   async function start() {
+    if (submitting.current) return;
+    if (status === "failed" && !canRetry) return;
+    submitting.current = true;
     setStarting(true);
     setError("");
     try {
-      const response = await fetch(`${apiBaseUrl}/documents/${documentId}/analysis`, {
+      const path = status === "failed"
+        ? `/analyses/${analysisId}/retry`
+        : `/documents/${documentId}/analysis`;
+      const response = await fetch(`${apiBaseUrl}${path}`, {
         method: "POST", headers: { "X-User-ID": userId },
       });
-      if (!response.ok) throw new Error("analysis request failed");
-      setStatus("queued");
-      setFailure(null);
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.detail?.message ?? "Analiz başlatılamadı. Yeniden deneyebilirsin.");
+        return;
+      }
+      setAnalysisId(result.id ?? null);
+      setStatus(result.status === "completed" ? "completed"
+        : result.status === "failed" ? "failed" : "queued");
+      setFailure(result.failure_reason ?? null);
       setRefresh((value) => value + 1);
     } catch {
       setError("Analiz başlatılamadı. Yeniden deneyebilirsin.");
     } finally {
+      submitting.current = false;
       setStarting(false);
     }
   }
@@ -77,7 +99,7 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
         ? "PDF görüntü içeriyor; OCR uyguladıktan sonra yeniden yükle."
         : "Belge işlenemedi. Dosyanı kontrol edip yeniden deneyebilirsin."}</p>}
       {error && <p role="alert">{error}</p>}
-      {["uploaded", "failed"].includes(status) && (
+      {(status === "uploaded" || (status === "failed" && canRetry)) && (
         <button type="button" className="upload-button" onClick={start} disabled={starting}>
           {starting ? "Başlatılıyor…" : status === "failed" ? "Analizi yeniden dene" : "Analizi başlat"}
         </button>

@@ -1,11 +1,11 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from difflib import SequenceMatcher
 from hashlib import sha256
 from io import BytesIO
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intihal_api.analysis.hybrid import calculate_hybrid_similarity
@@ -38,15 +38,62 @@ SNAPSHOT_FIELDS = (
 )
 
 
+RETRYABLE_FAILURES = {"processing_failed", "processing_timeout", "retry_exhausted"}
+
+
+class AnalysisRetryError(ValueError):
+    def __init__(self, code: str):
+        self.code = code
+        super().__init__(code)
+
+
 async def queue_document(document: Document, session: AsyncSession, settings: Settings) -> Analysis:
     """Called with a row lock; admit the workflow durably before broker delivery."""
     latest = await latest_analysis(session, document.id)
-    if document.status not in {DocumentStatus.UPLOADED, DocumentStatus.FAILED}:
-        if latest is not None:
-            return latest  # repeated start requests don't create another run
+    if latest is not None:
+        return latest  # start is idempotent even if a fast worker has already failed
+    if document.status is not DocumentStatus.UPLOADED:
         raise ValueError("document is not available for analysis")
+    return await _enqueue(document, session, settings)
+
+
+async def retry_document(
+    document: Document, failed: Analysis, session: AsyncSession, settings: Settings
+) -> Analysis:
+    """Called with a refreshed document row lock; one retry per failed analysis ID."""
+    if failed.status is not AnalysisStatus.FAILED:
+        raise AnalysisRetryError("analysis_retry_conflict")
+    latest = await latest_analysis(session, document.id)
+    if latest is None:
+        raise AnalysisRetryError("analysis_retry_conflict")
+    if latest.id != failed.id:
+        if latest.status in {
+            AnalysisStatus.QUEUED,
+            AnalysisStatus.PROCESSING,
+            AnalysisStatus.COMPLETED,
+        }:
+            return latest  # duplicate retry for an old failed run
+        raise AnalysisRetryError("analysis_retry_conflict")
+    if document.status is not DocumentStatus.FAILED:
+        raise AnalysisRetryError("analysis_retry_conflict")
+    if failed.failure_reason not in RETRYABLE_FAILURES:
+        raise AnalysisRetryError("analysis_retry_not_allowed")
+    runs = await session.scalar(
+        select(func.count(Analysis.id)).where(Analysis.document_id == document.id)
+    )
+    if runs - 1 >= settings.analysis_manual_retry_limit:
+        raise AnalysisRetryError("analysis_retry_limit")
+    return await _enqueue(
+        document, session, settings, delay=settings.analysis_manual_retry_delay_seconds
+    )
+
+
+async def _enqueue(
+    document: Document, session: AsyncSession, settings: Settings, *, delay: int = 0
+) -> Analysis:
     analysis = Analysis(
         id=uuid4(),
+        created_at=datetime.now(UTC),
         document_id=document.id,
         status=AnalysisStatus.QUEUED,
         algorithm_version=settings.algorithm_version,
@@ -56,7 +103,7 @@ async def queue_document(document: Document, session: AsyncSession, settings: Se
     transition_document(document, DocumentStatus.QUEUED)
     document.failure_reason = None
     document.processing_attempts = 0
-    document.next_attempt_at = datetime.now(UTC)
+    document.next_attempt_at = datetime.now(UTC) + timedelta(seconds=delay)
     session.add(analysis)
     await session.commit()
     return analysis

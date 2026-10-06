@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     task_soft_timeout_seconds: int = Field(default=240, ge=1)
     task_hard_timeout_seconds: int = Field(default=300, ge=1)
     task_max_retries: int = Field(default=3, ge=0)
+    analysis_manual_retry_limit: int = Field(default=3, ge=0, le=20)
+    analysis_manual_retry_delay_seconds: int = Field(default=30, ge=1, le=3600)
     task_retry_backoff_seconds: int = Field(default=10, ge=1)
     task_retry_backoff_max_seconds: int = Field(default=120, ge=1)
     redis_visibility_timeout_seconds: int = Field(default=900, ge=1)

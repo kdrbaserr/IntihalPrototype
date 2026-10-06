@@ -16,7 +16,7 @@ async def owned_document(
         Document.status != DocumentStatus.DELETED,
     )
     if lock:
-        statement = statement.with_for_update()
+        statement = statement.with_for_update().execution_options(populate_existing=True)
     document = await session.scalar(statement)
     if document is None:
         raise HTTPException(status_code=404, detail={"code": "document_not_found"})

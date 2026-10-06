@@ -69,8 +69,9 @@ Ara durumlar ayrı commit edildiğinden kullanıcı worker çalışırken aşama
 
 **Idempotency:** Başlat isteğinin tekrarı ikinci bir aktif analiz oluşturmaz.
 API, belge satırını `SELECT ... FOR UPDATE` ile kilitler. Aktif veya tamamlanmış
-belgede aynı analiz kaydını döndürür. `FAILED` sonrası yeni analiz açılır; eski
-analizin hata kaydı korunur.
+belgede aynı analiz kaydını döndürür. Başarısız analiz için de başlat isteği aynı
+kaydı döndürür. `FAILED` sonrası yalnız kontrollü retry endpointi yeni analiz
+açar; eski analizin hata kaydı korunur. Ayrıntılar: [retry notları](analysis-retry.md).
 
 **Concurrency:** İki worker aynı belgeyi aynı anda alabilir. Her worker, belge
 UUID'sinden türetilen PostgreSQL advisory lock alır; kilit doluysa işleme başlamaz.

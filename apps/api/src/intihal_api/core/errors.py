@@ -1,4 +1,7 @@
 PUBLIC_MESSAGES = {
+    "analysis_retry_not_allowed": "Bu hata için dosyayı düzeltip yeniden yükleyin.",
+    "analysis_retry_conflict": "Yalnız son başarısız analiz yeniden denenebilir.",
+    "analysis_retry_limit": "Bu belge için yeniden deneme sınırına ulaşıldı.",
     "internal_error": "İşlem tamamlanamadı. Takip koduyla destek isteyebilirsiniz.",
     "authentication_required": "Geçerli bir kullanıcı kimliği gerekli.",
     "user_disabled": "Kullanıcı hesabı devre dışı.",
