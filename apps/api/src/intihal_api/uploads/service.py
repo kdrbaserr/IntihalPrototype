@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import unicodedata
 from hashlib import sha256
 from io import SEEK_SET
@@ -10,14 +9,13 @@ from uuid import UUID, uuid4
 
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.core.diagnostics import log_error
 from intihal_api.db.models import Document, DocumentStatus
 from intihal_api.storage import StorageError, StoredObject, build_document_storage_key
 from intihal_api.uploads.validation import ValidatedUpload, validate_document_upload
 
 HASH_CHUNK_SIZE_BYTES = 1024 * 1024
 MAX_ORIGINAL_FILENAME_LENGTH = 255
-
-logger = logging.getLogger(__name__)
 
 
 class DocumentSession(Protocol):
@@ -110,10 +108,12 @@ class DocumentUploadService:
     async def _remove_orphaned_object(self, storage_key: str) -> None:
         try:
             await run_in_threadpool(self.storage.remove_object, storage_key)
-        except StorageError:
-            logger.exception(
-                "Could not remove object after document metadata persistence failed",
-                extra={"storage_key": storage_key},
+        except StorageError as error:
+            log_error(
+                error,
+                code="storage_unavailable",
+                event="document_cleanup_failed",
+                storage_key=storage_key,
             )
 
 

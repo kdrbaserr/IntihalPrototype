@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useRef, useState } from "react";
+import { DocumentWorkflow } from "./document-workflow";
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const API_BASE_URL =
@@ -85,10 +86,12 @@ export function DocumentUpload() {
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
+  const [documentId, setDocumentId] = useState<string | null>(null);
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
     setSelectedFile(null);
+    setDocumentId(null);
     setProgress(0);
     setMessage("");
 
@@ -136,6 +139,12 @@ export function DocumentUpload() {
         setProgress(100);
         setUploadState("success");
         setMessage("Belge güvenli biçimde yüklendi ve kaydedildi.");
+        try {
+          const uploaded = JSON.parse(xhr.responseText);
+          if (typeof uploaded.id === "string") setDocumentId(uploaded.id);
+        } catch {
+          // Upload succeeded; only a valid document response can enable analysis.
+        }
         return;
       }
 
@@ -152,6 +161,7 @@ export function DocumentUpload() {
   }
 
   function clearSelection() {
+    setDocumentId(null);
     setSelectedFile(null);
     setUploadState("idle");
     setProgress(0);
@@ -237,6 +247,8 @@ export function DocumentUpload() {
         >
           {isUploading ? "Yükleniyor…" : uploadState === "success" ? "Yükleme tamamlandı" : "Belgeyi yükle"}
         </button>
+        {documentId && <DocumentWorkflow key={documentId} documentId={documentId}
+          apiBaseUrl={API_BASE_URL} userId={DEMO_USER_ID} />}
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ services:
       context: ./apps/api
       target: development
     restart: unless-stopped
-    environment:
+    environment: &api-environment
       INTIHAL_APP_NAME: "${INTIHAL_APP_NAME:-Intihal Prototype API}"
       INTIHAL_APP_VERSION: "${INTIHAL_APP_VERSION:-0.1.0}"
       INTIHAL_ENVIRONMENT: "${INTIHAL_ENVIRONMENT:-local}"
@@ -27,6 +27,21 @@ services:
       INTIHAL_WORD_TFIDF_WEIGHT: "${INTIHAL_WORD_TFIDF_WEIGHT:-0.50}"
       INTIHAL_CHARACTER_TFIDF_WEIGHT: "${INTIHAL_CHARACTER_TFIDF_WEIGHT:-0.30}"
       INTIHAL_WORD_OVERLAP_WEIGHT: "${INTIHAL_WORD_OVERLAP_WEIGHT:-0.20}"
+      INTIHAL_REDIS_HOST: redis
+      INTIHAL_REDIS_PORT: "6379"
+      INTIHAL_REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      INTIHAL_REDIS_BROKER_DB: "${INTIHAL_REDIS_BROKER_DB:-0}"
+      INTIHAL_REDIS_RESULT_DB: "${INTIHAL_REDIS_RESULT_DB:-1}"
+      INTIHAL_WORKER_CONCURRENCY: "${INTIHAL_WORKER_CONCURRENCY:-2}"
+      INTIHAL_TASK_SOFT_TIMEOUT_SECONDS: "${INTIHAL_TASK_SOFT_TIMEOUT_SECONDS:-240}"
+      INTIHAL_TASK_HARD_TIMEOUT_SECONDS: "${INTIHAL_TASK_HARD_TIMEOUT_SECONDS:-300}"
+      INTIHAL_TASK_MAX_RETRIES: "${INTIHAL_TASK_MAX_RETRIES:-3}"
+      INTIHAL_ANALYSIS_MANUAL_RETRY_LIMIT: "${INTIHAL_ANALYSIS_MANUAL_RETRY_LIMIT:-3}"
+      INTIHAL_ANALYSIS_MANUAL_RETRY_DELAY_SECONDS: "${INTIHAL_ANALYSIS_MANUAL_RETRY_DELAY_SECONDS:-30}"
+      INTIHAL_TASK_RETRY_BACKOFF_SECONDS: "${INTIHAL_TASK_RETRY_BACKOFF_SECONDS:-10}"
+      INTIHAL_TASK_RETRY_BACKOFF_MAX_SECONDS: "${INTIHAL_TASK_RETRY_BACKOFF_MAX_SECONDS:-120}"
+      INTIHAL_REDIS_VISIBILITY_TIMEOUT_SECONDS: "${INTIHAL_REDIS_VISIBILITY_TIMEOUT_SECONDS:-900}"
+      INTIHAL_TASK_RESULT_EXPIRES_SECONDS: "${INTIHAL_TASK_RESULT_EXPIRES_SECONDS:-86400}"
       WATCHFILES_FORCE_POLLING: "true"
     command:
       [
@@ -60,6 +75,55 @@ services:
       redis:
         condition: service_healthy
       minio:
+        condition: service_healthy
+    networks:
+      - backend
+
+  worker:
+    build:
+      context: ./apps/api
+      target: development
+    restart: unless-stopped
+    environment:
+      <<: *api-environment
+    command:
+      ["celery", "-A", "intihal_api.jobs.app:app", "worker", "--loglevel=INFO",
+       "--hostname=intihal@%h", "--queues=intihal.default,intihal.documents,intihal.analysis"]
+    volumes:
+      - ./apps/api/src:/app/src:ro
+    healthcheck:
+      test:
+        ["CMD", "python", "-c",
+         "import socket; from intihal_api.jobs.app import app; name = 'intihal@' + socket.gethostname(); replies = app.control.inspect(timeout=3, destination=[name]).ping(); raise SystemExit(0 if replies and replies.get(name, {}).get('ok') == 'pong' else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 330s
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - backend
+
+  scheduler:
+    build:
+      context: ./apps/api
+      target: development
+    restart: unless-stopped
+    environment:
+      <<: *api-environment
+    command:
+      ["celery", "-A", "intihal_api.jobs.app:app", "beat", "--loglevel=INFO",
+       "--schedule=/tmp/intihal-celerybeat"]
+    volumes:
+      - ./apps/api/src:/app/src:ro
+    depends_on:
+      worker:
         condition: service_healthy
     networks:
       - backend

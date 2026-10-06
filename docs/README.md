@@ -11,7 +11,18 @@ Burada zamanla şunlar tutulacaktır:
 - izinli kaynak havuzu kuralları,
 - kabul edilen lisanslar ve yasak veri toplama davranışları
   (`source-acquisition-policy.md`),
-- algoritmanın sınırları ve değerlendirme sonuçları.
+- algoritmanın sınırları ve değerlendirme sonuçları,
+- worker, kuyruklar, timeout/retry politikası ve mühendislik notları
+  (`worker-queues.md`).
+- belge durum zinciri, worker entegrasyonu ve ⭐ mühendislik notları
+  (`document-workflow.md`).
+- analiz oluşturma, durum sorgulama, eşleşme endpointleri ve ⭐ API notları
+  (`analysis-api.md`).
+- güvenli hata kodları, takip kodu, ayrıntılı log trace ve ⭐ mühendislik notları
+  (`error-handling.md`).
+- çift tıklama koruması, kontrollü manuel retry ve ⭐ notlar (`analysis-retry.md`).
+- başarı, timeout, worker kesintisi ve retry senaryo testleri
+  (`worker-resilience-tests.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

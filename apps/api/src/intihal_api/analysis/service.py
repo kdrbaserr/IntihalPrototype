@@ -32,6 +32,16 @@ class AnalysisService:
             status=AnalysisStatus.QUEUED,
             algorithm_version=self.settings.algorithm_version,
             similarity_threshold=self.settings.similarity_threshold,
+            config_snapshot={
+                field: str(getattr(self.settings, field))
+                for field in (
+                    "algorithm_version",
+                    "similarity_threshold",
+                    "word_tfidf_weight",
+                    "character_tfidf_weight",
+                    "word_overlap_weight",
+                )
+            },
         )
         try:
             session.add(analysis)

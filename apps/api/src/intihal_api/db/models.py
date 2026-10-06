@@ -6,6 +6,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     CheckConstraint,
     Date,
@@ -41,8 +42,10 @@ class DocumentStatus(enum.StrEnum):
     """Lifecycle state of a document and its analysis."""
 
     UPLOADED = "uploaded"
-    PROCESSING = "processing"
-    READY = "ready"
+    QUEUED = "queued"
+    EXTRACTING = "extracting"
+    ANALYZING = "analyzing"
+    COMPLETED = "completed"
     FAILED = "failed"
     DELETED = "deleted"
 
@@ -142,6 +145,9 @@ class Document(BaseModel):
     storage_bucket: Mapped[str] = mapped_column(String(63), nullable=False)
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     storage_etag: Mapped[str | None] = mapped_column(String(255))
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    processing_attempts: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     owner: Mapped[User] = relationship(back_populates="documents")
     chunks: Mapped[list[DocumentChunk]] = relationship(
@@ -328,6 +334,9 @@ class Analysis(BaseModel):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     failure_reason: Mapped[str | None] = mapped_column(Text)
+    config_snapshot: Mapped[dict[str, str]] = mapped_column(
+        JSON, default=dict, server_default="{}", nullable=False
+    )
 
     document: Mapped[Document] = relationship(back_populates="analyses")
     matches: Mapped[list[Match]] = relationship(

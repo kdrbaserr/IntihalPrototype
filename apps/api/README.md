@@ -50,7 +50,22 @@ docker compose up -d --build
 API kaynak kodu geliştirme container'ına bind volume olarak bağlanır. Uvicorn
 değişiklikleri algılar ve uygulamayı otomatik olarak yeniden yükler.
 
+Celery worker da Compose ile başlar. Kuyruk isimleri, timeout ve retry politikası,
+çalıştırma komutları ve mühendislik notları için
+[`worker-queues.md`](../../docs/worker-queues.md) dosyasına bakın. Belge durum zinciri,
+analiz başlatma endpoint'i ve worker akışı
+[`document-workflow.md`](../../docs/document-workflow.md) içinde anlatılır.
+
 ## Ayarlar
+
+Analiz oluşturma, durum sorgulama ve sayfalı eşleşme endpointleri:
+
+- `POST /api/v1/analyses` (`{"document_id": "UUID"}`)
+- `GET /api/v1/analyses/{analysis_id}`
+- `GET /api/v1/analyses/{analysis_id}/matches?limit=20&offset=0`
+
+Yanıt alanları, erişim kontrolü, hata kodları ve örnek istekler
+[`analysis-api.md`](../../docs/analysis-api.md) içinde açıklanır.
 
 Uygulama ayarları `INTIHAL_` önekli ortam değişkenlerinden okunur. Yerel
 geliştirmede `.env.example` dosyasını `.env` adıyla kopyalayıp değerleri
@@ -84,7 +99,8 @@ engellenir; hesap kapatma işlemi için kullanıcı durumu `disabled` yapılmal�
 Dosya içeriği PostgreSQL'e yazılmaz. `documents` tablosundaki `storage_bucket` ve
 `storage_key` MinIO nesnesini gösterir; `storage_etag`, `sha256`, `content_type` ve
 `size_bytes` bütünlük ve dosya metadatasını taşır. Aynı bucket/key çifti yalnızca bir
-belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `processing`, `ready`, `failed`
+belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `queued`, `extracting`,
+`analyzing`, `completed`, `failed`
 ve `deleted` durumlarıyla izlenir. `deleted`, kaydın denetim izi için tutulduğu mantıksal
 silme durumudur; MinIO nesnesini temizleyen iş ayrıca uygulanmalıdır.
 
@@ -298,3 +314,6 @@ alembic downgrade base
 
 Geri alma sonrasında şemayı tekrar kurmak için yeniden `alembic upgrade head`
 çalıştırılabilir.
+
+API hata sözleşmesi, worker trace kayıtları ve ⭐ mühendislik notları:
+[Güvenli hata ve log yönetimi](../../docs/error-handling.md).
