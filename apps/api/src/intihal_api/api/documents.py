@@ -8,7 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from intihal_api.api.dependencies import CurrentUser, DatabaseSession, ObjectStorage
+from intihal_api.core.config import get_settings
 from intihal_api.db.models import Document, DocumentStatus
+from intihal_api.jobs.workflow import queue_document
 from intihal_api.storage import StorageError
 from intihal_api.uploads import (
     DocumentUploadService,
@@ -31,6 +33,19 @@ class DocumentResponse(BaseModel):
     status: DocumentStatus
     created_at: datetime
     updated_at: datetime
+    failure_reason: str | None = None
+
+
+class AnalysisResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    document_id: UUID
+    status: str
+    algorithm_version: str
+    started_at: datetime | None
+    completed_at: datetime | None
+    failure_reason: str | None
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
@@ -94,3 +109,35 @@ async def list_documents(
         .limit(limit)
     )
     return list(documents)
+
+
+async def owned_document(document_id, current_user, session, *, lock=False) -> Document:
+    statement = select(Document).where(
+        Document.id == document_id,
+        Document.owner_id == current_user.id,
+        Document.status != DocumentStatus.DELETED,
+    )
+    if lock:
+        statement = statement.with_for_update()
+    document = await session.scalar(statement)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Belge bulunamadı.")
+    return document
+
+
+@router.get("/{document_id}", response_model=DocumentResponse)
+async def get_document(
+    document_id: UUID, current_user: CurrentUser, session: DatabaseSession
+) -> Document:
+    return await owned_document(document_id, current_user, session)
+
+
+@router.post("/{document_id}/analysis", response_model=AnalysisResponse, status_code=202)
+async def start_analysis(document_id: UUID, current_user: CurrentUser, session: DatabaseSession):
+    document = await owned_document(document_id, current_user, session, lock=True)
+    try:
+        return await queue_document(document, session, get_settings())
+    except ValueError as error:
+        raise HTTPException(
+            status_code=409, detail="Belge analiz için uygun durumda değil."
+        ) from error

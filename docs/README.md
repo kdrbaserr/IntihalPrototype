@@ -14,6 +14,8 @@ Burada zamanla şunlar tutulacaktır:
 - algoritmanın sınırları ve değerlendirme sonuçları,
 - worker, kuyruklar, timeout/retry politikası ve mühendislik notları
   (`worker-queues.md`).
+- belge durum zinciri, worker entegrasyonu ve ⭐ mühendislik notları
+  (`document-workflow.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

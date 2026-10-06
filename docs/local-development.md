@@ -29,7 +29,7 @@ Script şu sırayı izler:
 2. `.env` yoksa `.env.example` dosyasını kopyalar; varsa mevcut ayarları korur.
 3. Compose dosyasını ve ortam değişkenlerini doğrular.
 4. API ve web image'larını build eder.
-5. PostgreSQL, Redis, MinIO, API, Celery worker ve web servislerini başlatır.
+5. PostgreSQL, Redis, MinIO, API, Celery worker, scheduler ve web servislerini başlatır.
 6. Healthcheck'ler başarılı olana kadar en fazla 300 saniye bekler.
 
 ## `.env.example` ve `.env` farkı

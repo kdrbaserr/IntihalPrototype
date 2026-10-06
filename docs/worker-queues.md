@@ -7,10 +7,10 @@ Redis broker ve result backend kullanan Celery uygulaması, Compose worker servi
 Worker, Linux container içinde `prefork` process havuzuyla çalışır; Windows üzerinde
 doğrudan worker çalıştırmak yerine Docker kullanılır. Varsayılan concurrency 2'dir.
 
-Belge yükleme ve kaynak işleme endpoint'lerinin mevcut akışı değişmedi.
-`documents` ve `analysis` kuyrukları sonraki iş görevleri için hazırdır; bu adımda
-gerçek görev olarak yalnızca `intihal.healthcheck` kayıtlıdır. Kuyruk tanımlamak,
-belge işleme kodunu kendiliğinden asenkron hale getirmez.
+Belge analiz akışı artık worker'a bağlıdır: `intihal.documents.extract`,
+`intihal.analysis.run` ve `intihal.dispatch_pending` görevleri kayıtlıdır.
+Yükleme sonrası arayüzden **Analizi başlat** seçilir. Durum zinciri, kalıcı retry
+ve kurtarma ayrıntıları [belge iş akışı notlarında](document-workflow.md) anlatılır.
 
 ## ⭐ Not al: olay örgüsü
 
@@ -23,7 +23,7 @@ belge işleme kodunu kendiliğinden asenkron hale getirmez.
 5. Result backend sonucu ayrı Redis veritabanında, varsayılan 24 saat tutar.
 6. Producer, task ID ile sonucu okuyabilir.
 
-İleride hedeflenen belge akışı: dosyayı MinIO'ya yaz → belge kaydını PostgreSQL'e
+Uygulanan belge akışı: dosyayı MinIO'ya yaz → belge kaydını PostgreSQL'e
 commit et → kuyruğa belge ID'sini gönder → worker dosyayı ID üzerinden oku → metni
 çıkar → analiz görevini gönder → sonucu PostgreSQL'e kaydet. Dosya içeriğini ve
 SQLAlchemy session nesnesini kuyruk mesajına koyma. İşin kalıcı sonucu PostgreSQL'de
@@ -34,8 +34,8 @@ olmalı; süresi dolan Celery sonucu raporun kendisi değildir.
 | Kuyruk | Görev adı kuralı | Amaç |
 | --- | --- | --- |
 | `intihal.default` | `intihal.healthcheck` ve yönlendirilmemiş görevler | Altyapı kontrolü ve genel işler |
-| `intihal.documents` | `intihal.documents.*` | İleride belge/metin çıkarma işleri |
-| `intihal.analysis` | `intihal.analysis.*` | İleride benzerlik hesaplama işleri |
+| `intihal.documents` | `intihal.documents.*` | Belge/metin çıkarma işleri |
+| `intihal.analysis` | `intihal.analysis.*` | Benzerlik hesaplama işleri |
 
 ⭐ **Routing:** Görev adından hangi kuyruğa gidileceğini belirleyen kuraldır.
 Yanlış yazılan kuyruk isimleri otomatik oluşturulmaz; açık hata verir.
@@ -69,6 +69,10 @@ Uzun ETA/countdown işleri eklenirse bu ilişki tekrar değerlendirilmelidir.
 
 ## Retry politikası
 
+Aşağıdaki Celery autoretry kuralları genel altyapı görevleri içindir. Belge
+işlerinin deneme sayısı ve bekleme zamanı PostgreSQL'de tutulur; dispatcher
+yeniden gönderir. İki retry mekanizması belge işlerinde birlikte uygulanmaz.
+
 - Sadece `TransientJobError` otomatik retry edilir. Görev kodu, geçici olduğunu
   bildiği ve tekrarının güvenli olduğu hatayı bu tipe çevirmelidir.
 - En fazla 3 retry: ilk çalıştırmayla beraber en fazla 4 deneme.
@@ -92,19 +96,21 @@ ayrıdır; broker'a hiç yazılamayan iş worker'da çalışmış sayılmaz.
 
 **ACK (acknowledgment)** mesajın alındığının broker'a onayıdır. Bu altyapıda early
 ACK seçildi (`task_acks_late=False`). Worker çalışırken çökerse başlanmış işin
-otomatik geri gelmesi garanti değildir. Bu tercih, henüz idempotent olmayan iş
-kodunun kontrolsüz tekrarını önler; kayıp işleri toparlama mekanizması değildir.
+broker üzerinden otomatik geri gelmesi garanti değildir. Belge işleri için
+kalıcı durum taraması ve belge kilidi artık kurtarma sağlar; ayrıntılar yeni
+iş akışı notlarındadır. Genel görevler için ayrıca kurtarma tasarlanmalıdır.
 
 **Idempotency:** Aynı iş tekrar çalışınca sonuç veya yan etki çoğalmamalı.
 Örneğin aynı belge için ikinci kez chunk/rapor oluşturmamak. İş görevleri
 eklenirken benzersiz anahtarlar, durum geçişleri ve transaction sınırlarıyla bu
-özellik sağlanmalı. Sonra late ACK ve çöken worker sonrası kurtarma politikası
-tasarlanabilir. Retry da işi yeniden çalıştırır; early ACK bu ihtiyacı ortadan
+özellik sağlanmalı. Belge akışında kilit ve atomic kayıt bu amaçla kullanılır.
+Retry da işi yeniden çalıştırır; early ACK bu ihtiyacı ortadan
 kaldırmaz. Mesaj sistemleriyle genel bir exactly-once garantisi varsayma.
 
 **Transaction/outbox:** Veritabanına kayıt yazmak ve Redis'e görev göndermek iki
 ayrı işlemdir. Aradaki çökme işi kaybettirebilir. Gerçek endpoint entegrasyonunda
 transactional outbox veya bir telafi mekanizması bu boşluğu ele almalıdır.
+Bu prototipte kalıcı belge durumunu yeniden tarayan dispatcher uygulanmıştır.
 
 ## Çalıştırma ve kontrol
 

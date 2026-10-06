@@ -52,9 +52,9 @@ değişiklikleri algılar ve uygulamayı otomatik olarak yeniden yükler.
 
 Celery worker da Compose ile başlar. Kuyruk isimleri, timeout ve retry politikası,
 çalıştırma komutları ve mühendislik notları için
-[`worker-queues.md`](../../docs/worker-queues.md) dosyasına bakın. Bu aşamada worker
-altyapısı ve healthcheck görevi hazırdır; belge ve analiz görevleri henüz endpoint
-akışına bağlanmamıştır.
+[`worker-queues.md`](../../docs/worker-queues.md) dosyasına bakın. Belge durum zinciri,
+analiz başlatma endpoint'i ve worker akışı
+[`document-workflow.md`](../../docs/document-workflow.md) içinde anlatılır.
 
 ## Ayarlar
 
@@ -90,7 +90,8 @@ engellenir; hesap kapatma işlemi için kullanıcı durumu `disabled` yapılmal�
 Dosya içeriği PostgreSQL'e yazılmaz. `documents` tablosundaki `storage_bucket` ve
 `storage_key` MinIO nesnesini gösterir; `storage_etag`, `sha256`, `content_type` ve
 `size_bytes` bütünlük ve dosya metadatasını taşır. Aynı bucket/key çifti yalnızca bir
-belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `processing`, `ready`, `failed`
+belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `queued`, `extracting`,
+`analyzing`, `completed`, `failed`
 ve `deleted` durumlarıyla izlenir. `deleted`, kaydın denetim izi için tutulduğu mantıksal
 silme durumudur; MinIO nesnesini temizleyen iş ayrıca uygulanmalıdır.
 

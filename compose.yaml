@@ -108,6 +108,24 @@ services:
     networks:
       - backend
 
+  scheduler:
+    build:
+      context: ./apps/api
+      target: development
+    restart: unless-stopped
+    environment:
+      <<: *api-environment
+    command:
+      ["celery", "-A", "intihal_api.jobs.app:app", "beat", "--loglevel=INFO",
+       "--schedule=/tmp/intihal-celerybeat"]
+    volumes:
+      - ./apps/api/src:/app/src:ro
+    depends_on:
+      worker:
+        condition: service_healthy
+    networks:
+      - backend
+
   web:
     build:
       context: ./apps/web

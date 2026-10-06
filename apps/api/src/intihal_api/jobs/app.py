@@ -44,6 +44,12 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
             "intihal.analysis.*": {"queue": ANALYSIS_QUEUE},
             "intihal.healthcheck": {"queue": DEFAULT_QUEUE},
         },
+        beat_schedule={
+            "dispatch-document-workflows": {
+                "task": "intihal.dispatch_pending",
+                "schedule": 15.0,
+            },
+        },
         task_serializer="json",
         result_serializer="json",
         accept_content=["json"],

@@ -81,6 +81,9 @@ def test_document_model_tracks_owner_lifecycle_and_storage() -> None:
         "storage_bucket",
         "storage_key",
         "storage_etag",
+        "failure_reason",
+        "processing_attempts",
+        "next_attempt_at",
         "created_at",
         "updated_at",
     }
@@ -91,8 +94,10 @@ def test_document_model_tracks_owner_lifecycle_and_storage() -> None:
     assert mapper.relationships.owner.back_populates == "documents"
     assert {status.value for status in DocumentStatus} == {
         "uploaded",
-        "processing",
-        "ready",
+        "queued",
+        "extracting",
+        "analyzing",
+        "completed",
         "failed",
         "deleted",
     }
@@ -226,6 +231,7 @@ def test_analysis_tracks_execution_and_algorithm_version() -> None:
         "started_at",
         "completed_at",
         "failure_reason",
+        "config_snapshot",
         "created_at",
         "updated_at",
     }

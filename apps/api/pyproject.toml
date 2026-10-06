@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "aiosqlite>=0.21,<1.0",
     "httpx>=0.28,<1.0",
     "pytest>=8.4,<9.0",
     "ruff==0.16.9",
