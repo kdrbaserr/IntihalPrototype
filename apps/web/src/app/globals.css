@@ -422,6 +422,34 @@ progress::-moz-progress-bar {
   cursor: not-allowed;
 }
 
+.analysis-status {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.analysis-status-heading { display: flex; align-items: center; gap: 10px; }
+.analysis-status-heading p { margin: 0; font-weight: 750; }
+.analysis-status-indicator { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; background: var(--brand); }
+.analysis-status[data-status="completed"] .analysis-status-indicator { background: #07635c; }
+.analysis-status[data-status="failed"] .analysis-status-indicator { background: #9b2c2c; }
+.analysis-status-description { margin: 10px 0 20px; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+.analysis-stages { display: grid; gap: 8px; list-style: none; margin: 16px 0 0; padding: 0; }
+.analysis-stages li { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; }
+.analysis-stage-marker { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--background); color: var(--muted); font-size: .8rem; }
+.analysis-stages strong { display: block; font-size: .85rem; }
+.analysis-stages li div > span { display: block; margin-top: 3px; font-size: .75rem; color: var(--muted); }
+.analysis-stages li[data-state="active"] { background: var(--surface-soft); border-color: #b9d4fa; }
+.analysis-stages li[data-state="active"] .analysis-stage-marker { background: var(--brand); color: white; }
+.analysis-stages li[data-state="done"] .analysis-stage-marker { background: #e5f8f5; color: #07635c; }
+.analysis-stages li[data-state="interrupted"] { background: #fff0f0; border-color: #efcaca; }
+.analysis-stages li[data-state="interrupted"] .analysis-stage-marker { color: #9b2c2c; }
+.analysis-error { margin-top: 16px; padding: 12px 14px; border: 1px solid #efcaca; border-radius: 10px; background: #fff0f0; color: #9b2c2c; font-size: .85rem; line-height: 1.6; }
+.analysis-error p { margin: 4px 0 0; }
+.analysis-trace { overflow-wrap: anywhere; font-size: .75rem; }
+
 .section-heading h2 {
   margin: 10px 0 32px;
   font-size: clamp(1.75rem, 3vw, 2.5rem);

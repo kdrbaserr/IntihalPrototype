@@ -23,6 +23,8 @@ Burada zamanla şunlar tutulacaktır:
 - çift tıklama koruması, kontrollü manuel retry ve ⭐ notlar (`analysis-retry.md`).
 - başarı, timeout, worker kesintisi ve retry senaryo testleri
   (`worker-resilience-tests.md`).
+- kuyruk, metin çıkarma, analiz ve hata durumlarının kullanıcıya gösterimi
+  (`analysis-status-ui.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.
