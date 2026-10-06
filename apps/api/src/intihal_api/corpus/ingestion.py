@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import date
 from typing import BinaryIO, Protocol
@@ -8,6 +7,7 @@ from uuid import uuid4
 
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.core.diagnostics import log_error
 from intihal_api.corpus.service import SourceDocumentProcessingService, SourceProcessingSession
 from intihal_api.db.models import LicenseStatus, SourceDocument, SourceDocumentStatus
 from intihal_api.storage import StorageError, StoredObject, build_source_storage_key
@@ -17,8 +17,6 @@ from intihal_api.uploads import (
     sanitize_original_filename,
     validate_document_upload,
 )
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,10 +128,12 @@ class SourceDocumentIngestionService:
     async def _remove_orphaned_object(self, storage_key: str) -> None:
         try:
             await run_in_threadpool(self.storage.remove_object, storage_key)
-        except StorageError:
-            logger.exception(
-                "Could not remove source object after metadata persistence failed",
-                extra={"storage_key": storage_key},
+        except StorageError as error:
+            log_error(
+                error,
+                code="storage_unavailable",
+                event="source_cleanup_failed",
+                storage_key=storage_key,
             )
 
 

@@ -19,5 +19,5 @@ async def owned_document(
         statement = statement.with_for_update()
     document = await session.scalar(statement)
     if document is None:
-        raise HTTPException(status_code=404, detail="Belge bulunamadı.")
+        raise HTTPException(status_code=404, detail={"code": "document_not_found"})
     return document

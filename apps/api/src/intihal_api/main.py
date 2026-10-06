@@ -9,6 +9,7 @@ from starlette.concurrency import run_in_threadpool
 from intihal_api.api.admin_sources import router as admin_sources_router
 from intihal_api.api.analyses import router as analyses_router
 from intihal_api.api.documents import router as documents_router
+from intihal_api.api.errors import install_error_handling
 from intihal_api.api.health import router as health_router
 from intihal_api.core.config import get_settings
 from intihal_api.storage import ObjectStorageService, create_object_storage_service
@@ -34,15 +35,17 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        debug=settings.debug,
+        debug=False,  # debug exception pages would expose tracebacks to API clients
         lifespan=lifespan,
     )
+    install_error_handling(application)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "X-User-ID"],
+        expose_headers=["X-Request-ID"],
     )
 
     # `/health` is convenient for local checks; the versioned path is the

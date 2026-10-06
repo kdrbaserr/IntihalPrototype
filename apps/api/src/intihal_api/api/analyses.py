@@ -48,7 +48,7 @@ async def owned_analysis(
         )
     ).first()
     if row is None:
-        raise HTTPException(status_code=404, detail="Analiz bulunamadı.")
+        raise HTTPException(status_code=404, detail={"code": "analysis_not_found"})
     return row.Analysis, row.Document
 
 
@@ -63,9 +63,7 @@ async def create_analysis(
     try:
         analysis = await queue_document(document, session, get_settings())
     except ValueError as error:
-        raise HTTPException(
-            status_code=409, detail="Belge analiz için uygun durumda değil."
-        ) from error
+        raise HTTPException(status_code=409, detail={"code": "analysis_not_available"}) from error
     response.headers["Location"] = f"{get_settings().api_v1_prefix}/analyses/{analysis.id}"
     return analysis
 

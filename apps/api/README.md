@@ -314,3 +314,6 @@ alembic downgrade base
 
 Geri alma sonrasında şemayı tekrar kurmak için yeniden `alembic upgrade head`
 çalıştırılabilir.
+
+API hata sözleşmesi, worker trace kayıtları ve ⭐ mühendislik notları:
+[Güvenli hata ve log yönetimi](../../docs/error-handling.md).

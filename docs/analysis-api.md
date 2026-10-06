@@ -152,6 +152,10 @@ istemcinin filtrelemesine güvenilmez.
 
 ## Örnek kullanım
 
+Hata yanıtları `detail.code`, güvenli `detail.message` ve `detail.trace_id`
+alanlarını içerir. `X-Request-ID` aynı takip kodunu taşır. Ayrıntılar ve ⭐ notlar
+[güvenli hata ve trace belgesinde](error-handling.md) açıklanır.
+
 ```powershell
 $headers = @{ "X-User-ID" = "11111111-1111-1111-1111-111111111111" }
 $payload = @{ document_id = "yuklenen-belgenin-uuid-degeri" } | ConvertTo-Json

@@ -2,8 +2,9 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from intihal_api.core.errors import safe_failure_code
 from intihal_api.db.models import AnalysisStatus, DocumentStatus, MatchMethod
 
 
@@ -22,6 +23,11 @@ class AnalysisResponse(BaseModel):
     started_at: datetime | None
     completed_at: datetime | None
     failure_reason: str | None
+
+    @field_validator("failure_reason")
+    @classmethod
+    def safe_failure(cls, value: str | None) -> str | None:
+        return safe_failure_code(value)
 
 
 class AnalysisDetailResponse(AnalysisResponse):

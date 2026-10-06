@@ -18,6 +18,8 @@ Burada zamanla şunlar tutulacaktır:
   (`document-workflow.md`).
 - analiz oluşturma, durum sorgulama, eşleşme endpointleri ve ⭐ API notları
   (`analysis-api.md`).
+- güvenli hata kodları, takip kodu, ayrıntılı log trace ve ⭐ mühendislik notları
+  (`error-handling.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

@@ -3,7 +3,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -11,6 +11,7 @@ from intihal_api.api.analysis_schemas import AnalysisResponse
 from intihal_api.api.dependencies import CurrentUser, DatabaseSession, ObjectStorage
 from intihal_api.api.document_access import owned_document
 from intihal_api.core.config import get_settings
+from intihal_api.core.errors import safe_failure_code
 from intihal_api.db.models import Document, DocumentStatus
 from intihal_api.jobs.workflow import queue_document
 from intihal_api.storage import StorageError
@@ -36,6 +37,11 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     failure_reason: str | None = None
+
+    @field_validator("failure_reason")
+    @classmethod
+    def safe_failure(cls, value: str | None) -> str | None:
+        return safe_failure_code(value)
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
@@ -114,6 +120,4 @@ async def start_analysis(document_id: UUID, current_user: CurrentUser, session: 
     try:
         return await queue_document(document, session, get_settings())
     except ValueError as error:
-        raise HTTPException(
-            status_code=409, detail="Belge analiz için uygun durumda değil."
-        ) from error
+        raise HTTPException(status_code=409, detail={"code": "analysis_not_available"}) from error

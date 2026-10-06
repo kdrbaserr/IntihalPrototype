@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from intihal_api.core.config import get_settings
+from intihal_api.core.diagnostics import log_error
 from intihal_api.db.models import AnalysisStatus, Document, DocumentStatus
 from intihal_api.jobs.app import TransientJobError
 from intihal_api.jobs.states import transition_document
@@ -56,7 +57,7 @@ async def fail_document(document, analysis, session, reason: str) -> None:
     await session.commit()
 
 
-async def run_stage(document_id: str, stage: str) -> str:
+async def run_stage(document_id: str, stage: str, task_id: str | None = None) -> str:
     """Pin one connection so a document lock survives progress commits."""
     settings = get_settings()
     identifier = UUID(document_id)
@@ -95,6 +96,8 @@ async def run_stage(document_id: str, stage: str) -> str:
                         seconds=settings.task_hard_timeout_seconds + 30
                     )
                     await session.commit()
+                    analysis_identifier = str(analysis.id)
+                    attempt = document.processing_attempts
                     try:
                         if stage == "extract":
                             storage = create_object_storage_service(settings)
@@ -105,6 +108,16 @@ async def run_stage(document_id: str, stage: str) -> str:
                             await analyze_document(document, analysis, session, settings)
                         return "succeeded"
                     except Exception as error:
+                        log_error(
+                            error,
+                            code=failure_code(error),
+                            event="workflow_stage_error",
+                            document_id=str(identifier),
+                            analysis_id=analysis_identifier,
+                            stage=stage,
+                            attempt=attempt,
+                            task_id=task_id,
+                        )
                         await session.rollback()
                         # Rollback expires ORM instances; reload before accessing attributes.
                         document = await session.get(Document, identifier)
@@ -163,10 +176,15 @@ async def dispatch_pending(publish: Callable[[str, str], Any]) -> int:
         await engine.dispose()
 
 
-def run_async(operation: Coroutine[Any, Any, Any]) -> Any:
+def run_async(operation: Coroutine[Any, Any, Any], **context) -> Any:
     try:
         return asyncio.run(operation)
     except Exception as error:
+        identifier = log_error(
+            error, code="internal_error", event="worker_unhandled_error", **context
+        )
         if is_transient(error):
-            raise TransientJobError("Background dependency unavailable") from error
-        raise
+            raise TransientJobError(
+                f"Background dependency unavailable; trace_id={identifier}"
+            ) from None
+        raise RuntimeError(f"Background job failed; trace_id={identifier}") from None
