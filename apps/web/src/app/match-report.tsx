@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
-import { MatchEvidence, MergedRange, mergeMatchRanges, SCORE_LABELS, scoreLevel } from "./match-ranges";
-
-function percent(score: number) {
-  return new Intl.NumberFormat("tr-TR", { style: "percent", maximumFractionDigits: 1 }).format(score);
-}
+import { MatchEvidence, filterMatches, mergeMatchRanges, SCORE_LABELS, scoreLevel } from "./match-ranges";
+import { MatchDetail, formatScore as percent } from "./match-detail";
 
 function sourceUrl(value: string | null) {
   if (!value) return null;
@@ -21,8 +18,19 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
 }) {
   const [opened, setOpened] = useState(false);
   const [refresh, setRefresh] = useState(0);
-  const [result, setResult] = useState<{ groups: MergedRange[]; count: number } | null>(null);
+  const [result, setResult] = useState<MatchEvidence[] | null>(null);
+  const [sourceId, setSourceId] = useState("");
+  const [minimumScore, setMinimumScore] = useState(0);
+  const controlId = useId();
   const [error, setError] = useState("");
+  const filtered = useMemo(() => filterMatches(result ?? [], sourceId, minimumScore / 100),
+    [result, sourceId, minimumScore]);
+  const groups = useMemo(() => mergeMatchRanges(filtered), [filtered]);
+  const sources = useMemo(() => {
+    const byId = new Map<string, MatchEvidence["source"]>();
+    for (const match of result ?? []) byId.set(match.source.source_document_id, match.source);
+    return [...byId.values()].sort((a, b) => a.title.localeCompare(b.title, "tr"));
+  }, [result]);
   useEffect(() => {
     if (!opened) return;
     const controller = new AbortController();
@@ -49,8 +57,8 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
         if (new Set(matches.map((match) => match.id)).size !== matches.length) {
           throw new Error("Duplicate match page");
         }
-        const groups = mergeMatchRanges(matches);
-        if (!controller.signal.aborted) setResult({ groups, count: matches.length });
+        mergeMatchRanges(matches); // validate the complete evidence before rendering/filtering
+        if (!controller.signal.aborted) setResult(matches);
       } catch {
         if (!controller.signal.aborted) setError("Eşleşmeler okunamadı. Raporu yeniden yükleyebilirsin.");
       }
@@ -76,10 +84,29 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
         Raporu yeniden yükle
       </button>
     </div> : !result ? <p role="status">Eşleşmeler yükleniyor…</p>
-      : result.count === 0 ? <p role="status">Bu analizde eşleşme bulunamadı.</p>
+      : result.length === 0 ? <p role="status">Bu analizde eşleşme bulunamadı.</p>
         : <>
-          <p>{result.count} eşleşme, {result.groups.length} bölümde gösteriliyor.</p>
-          {result.groups.map((group) => {
+          <fieldset className="match-filters"><legend>Eşleşme filtreleri</legend>
+            <label htmlFor={`${controlId}-source`}>Kaynak</label>
+            <select id={`${controlId}-source`} value={sourceId} onChange={(event) => setSourceId(event.target.value)}>
+              <option value="">Tüm kaynaklar</option>
+              {sources.map((source) => <option key={source.source_document_id} value={source.source_document_id}>
+                {source.title}{sources.filter((other) => other.title === source.title).length > 1
+                  ? ` · ${source.original_filename ?? "Kaynak"} · ${source.source_document_id.slice(0, 8)}` : ""}
+              </option>)}
+            </select>
+            <label htmlFor={`${controlId}-score`}>Minimum skor</label>
+            <output htmlFor={`${controlId}-score`}>{percent(minimumScore / 100)}</output>
+            <input id={`${controlId}-score`} type="range" min="0" max="100" step="1"
+              aria-valuetext={percent(minimumScore / 100)}
+              value={minimumScore} onChange={(event) => setMinimumScore(Number(event.target.value))} />
+            <button type="button" onClick={() => { setSourceId(""); setMinimumScore(0); }}>Filtreleri temizle</button>
+          </fieldset>
+          <p>{filtered.length} eşleşme, {groups.length} bölümde gösteriliyor.</p>
+          <p className="match-note">Toplam {result.length} eşleşmeden filtrelenenler gösteriliyor.
+            Analizin kayıtlı skor eşiğinin altındaki eşleşmeler raporda bulunmaz.</p>
+          {filtered.length === 0 && <p role="status">Bu filtrelere uygun eşleşme bulunamadı.</p>}
+          {groups.map((group) => {
             const level = scoreLevel(group.score);
             return <article className="match-card" key={`${group.start}-${group.end}`} data-level={level}>
               <div className="match-heading"><strong>{SCORE_LABELS[level]} benzerlik · {percent(group.score)}</strong>
@@ -94,7 +121,7 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
                       : match.source.title}</strong>
                     <p>Skor: {percent(Number(match.similarity_score))} · Kaynak sayfası: {match.source.page_number ?? "Sayfa bilgisi yok"}</p>
                     <p>Belge: [{match.document.char_start}, {match.document.char_end}) · Kaynak: [{match.source.char_start}, {match.source.char_end})</p>
-                    <blockquote>{match.source.text}</blockquote>
+                    <MatchDetail match={match} />
                   </li>;
                 })}</ul>
               </details>

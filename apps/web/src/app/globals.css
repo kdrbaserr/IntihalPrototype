@@ -469,6 +469,23 @@ progress::-moz-progress-bar {
 .match-sources p { margin: 5px 0; color: var(--muted); }
 .match-sources a { color: var(--brand-dark); text-decoration: underline; }
 
+.match-filters { display: flex; flex-direction: column; gap: 8px; margin: 18px 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+.match-filters legend { font-weight: 700; font-size: .85rem; }
+.match-filters label { font-size: .85rem; font-weight: 600; }
+.match-filters select, .match-filters button { min-height: 40px; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.match-filters input { width: 100%; accent-color: var(--brand); }
+.match-filters output { font-size: .85rem; color: var(--brand-dark); }
+.match-filters button { cursor: pointer; }
+.match-detail { margin-top: 10px; }
+.match-detail dl { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr); gap: 8px 12px; }
+.match-detail dt { font-weight: 600; }
+.match-detail dd { margin: 0; }
+.match-detail h4 { margin: 16px 0 5px; }
+.match-score-table { max-width: 100%; overflow-x: auto; }
+.match-score-table table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+.match-score-table caption { text-align: left; font-weight: 700; padding: 10px 0; }
+.match-score-table th, .match-score-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+
 .section-heading h2 {
   margin: 10px 0 32px;
   font-size: clamp(1.75rem, 3vw, 2.5rem);

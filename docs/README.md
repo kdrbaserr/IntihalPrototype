@@ -28,6 +28,7 @@ Burada zamanla şunlar tutulacaktır:
 - eşleşme aralıkları, kaynak/sayfa bilgileri ve kalıcı skor bileşenleri
   (`match-evidence-api.md`).
 - çakışan aralıkların birleştirilmesi ve skor renkleri (`match-highlighting.md`).
+- kaynak/minimum skor filtreleri ve eşleşme ayrıntıları (`match-filters-details.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

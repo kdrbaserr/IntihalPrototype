@@ -3,9 +3,22 @@ export type Evidence = {
 };
 export type MatchEvidence = {
   id: string; similarity_score: string | number;
+  method?: string; matched_token_count?: number; explanation?: string | null;
+  score_components?: {
+    scope: "chunk_pair"; algorithm_version: string;
+    word_tfidf: ScoreSignal; character_tfidf: ScoreSignal; word_overlap: ScoreSignal;
+  } | null;
   document: Evidence;
-  source: Evidence & { source_document_id: string; title: string; source_url: string | null };
+  source: Evidence & { source_document_id: string; title: string; source_url: string | null;
+    original_filename?: string; author?: string | null; publisher?: string | null;
+    license_name?: string; attribution_text?: string | null };
 };
+export type ScoreSignal = { score: string | number; weight: string | number; contribution: string | number };
+
+export function filterMatches(matches: MatchEvidence[], sourceId: string, minimumScore: number) {
+  return matches.filter((match) => (sourceId === "" || match.source.source_document_id === sourceId) &&
+    Number(match.similarity_score) >= minimumScore);
+}
 export type MergedRange = {
   start: number; end: number; text: string; score: number;
   pages: (number | null)[]; matches: MatchEvidence[];
