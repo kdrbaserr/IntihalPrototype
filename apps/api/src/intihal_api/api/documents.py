@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
 from pydantic import BaseModel, ConfigDict, field_validator
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from intihal_api.api.analysis_schemas import AnalysisResponse
@@ -16,6 +17,7 @@ from intihal_api.api.document_access import (
 from intihal_api.core.config import get_settings
 from intihal_api.core.errors import safe_failure_code
 from intihal_api.db.models import Analysis, Document, DocumentStatus
+from intihal_api.documents.cleanup import DocumentCleanupError, cleanup_document
 from intihal_api.jobs.workflow import queue_document
 from intihal_api.storage import StorageError
 from intihal_api.uploads import (
@@ -130,3 +132,35 @@ async def start_analysis(document_id: UUID, current_user: CurrentUser, session: 
         return await queue_document(document, session, get_settings())
     except ValueError as error:
         raise HTTPException(status_code=409, detail={"code": "analysis_not_available"}) from error
+
+
+@router.delete("/{document_id}", status_code=204)
+async def delete_document(
+    document_id: UUID,
+    current_user: CurrentUser,
+    session: DatabaseSession,
+    storage: ObjectStorage,
+    response: Response,
+) -> None:
+    # Unlike read endpoints, deletion can find its owner's tombstone to resume cleanup.
+    document = await session.scalar(
+        select(Document)
+        .where(
+            Document.id == document_id,
+            Document.owner_id == current_user.id,
+        )
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if document is None:
+        raise HTTPException(404, detail={"code": "document_not_found"})
+    try:
+        await cleanup_document(document, session, storage)
+    except DocumentCleanupError as error:
+        raise HTTPException(409, detail={"code": error.code}) from error
+    except StorageError as error:
+        raise HTTPException(503, detail={"code": "document_cleanup_pending"}) from error
+    except IntegrityError as error:
+        await session.rollback()
+        raise HTTPException(409, detail={"code": "document_cleanup_conflict"}) from error
+    response.headers["Cache-Control"] = "no-store"

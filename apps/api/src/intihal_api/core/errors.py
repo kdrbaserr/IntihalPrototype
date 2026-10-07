@@ -1,4 +1,12 @@
 PUBLIC_MESSAGES = {
+    "document_processing": "Belge işleniyor. Analiz tamamlandıktan sonra silmeyi yeniden deneyin.",
+    "document_storage_mismatch": "Belgenin depolama kaydı doğrulanamadı; silme yapılmadı.",
+    "document_cleanup_pending": (
+        "Belge erişimden kaldırıldı; dosya temizlenemedi. Silme isteğini yeniden deneyin."
+    ),
+    "document_cleanup_conflict": (
+        "Belge gizlendi; ilişkili kayıtlar temizlenemedi. Takip koduyla destek isteyin."
+    ),
     "invalid_credentials": "E-posta veya parola hatalı.",
     "registration_conflict": "Bu adresle kayıt oluşturulamıyor.",
     "csrf_rejected": "İstek kaynağı doğrulanamadı.",
