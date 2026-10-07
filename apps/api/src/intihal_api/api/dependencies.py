@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intihal_api.core.config import get_settings
+from intihal_api.core.rate_limit import enforce_rate_limit
 from intihal_api.core.security import token_digest
 from intihal_api.db.models import User, UserRole, UserSession, UserStatus
 from intihal_api.db.session import get_db_session
@@ -83,3 +84,18 @@ async def require_admin_user(current_user: CurrentUser) -> User:
 
 AdminUser = Annotated[User, Depends(require_admin_user)]
 ObjectStorage = Annotated[ObjectStorageService, Depends(get_object_storage)]
+
+
+async def require_upload_rate(
+    request: Request,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    await enforce_rate_limit(
+        session,
+        code="upload_rate_limited",
+        identities=[
+            (f"upload:user:{user.id}", 10),
+            (f"upload:ip:{request.client.host if request.client else 'unknown'}", 20),
+        ],
+    )

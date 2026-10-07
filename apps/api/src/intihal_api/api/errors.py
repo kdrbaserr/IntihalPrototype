@@ -8,6 +8,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from intihal_api.core.diagnostics import log_error, request_id
 from intihal_api.core.errors import PUBLIC_MESSAGES
+from intihal_api.core.redaction import safe_route
 
 DEFAULT_CODES = {
     401: "authentication_required",
@@ -55,6 +56,22 @@ class RequestDiagnosticsMiddleware:
 
         try:
             await self.app(scope, receive, traced_send)
+        except HTTPException as error:
+            if started:
+                raise RuntimeError(f"Response interrupted; trace_id={identifier}") from None
+            code = error.detail.get("code") if isinstance(error.detail, dict) else None
+            code = code if isinstance(code, str) and code in PUBLIC_MESSAGES else "invalid_request"
+            log_error(
+                error,
+                code=code,
+                event="http_expected_error",
+                http_status=error.status_code,
+                method=scope["method"],
+                route=safe_route(scope),
+            )
+            await error_response(error.status_code, code, identifier, error.headers)(
+                scope, receive, traced_send
+            )
         except Exception as error:
             log_error(
                 error,
@@ -62,7 +79,7 @@ class RequestDiagnosticsMiddleware:
                 event="http_unhandled_error",
                 http_status=500,
                 method=scope["method"],
-                route=getattr(scope.get("route"), "path", None),
+                route=safe_route(scope),
             )
             if started:
                 raise RuntimeError(f"Response interrupted; trace_id={identifier}") from None
@@ -76,6 +93,8 @@ def install_error_handling(application: FastAPI) -> None:
 
     @application.exception_handler(HTTPException)
     async def http_error(request: Request, error: HTTPException):
+        if request.scope.get("intihal_upload_limit_exceeded"):
+            error = HTTPException(413, detail={"code": "request_too_large"})
         provided = error.detail.get("code") if isinstance(error.detail, dict) else None
         code = (
             provided
@@ -91,7 +110,7 @@ def install_error_handling(application: FastAPI) -> None:
             event="http_expected_error",
             http_status=error.status_code,
             method=request.method,
-            route=getattr(request.scope.get("route"), "path", None),
+            route=safe_route(request.scope),
         )
         return error_response(error.status_code, code, identifier, error.headers)
 
@@ -103,6 +122,6 @@ def install_error_handling(application: FastAPI) -> None:
             event="http_validation_error",
             http_status=422,
             method=request.method,
-            route=getattr(request.scope.get("route"), "path", None),
+            route=safe_route(request.scope),
         )
         return error_response(422, "validation_error", identifier)

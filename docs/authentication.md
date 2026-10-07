@@ -41,8 +41,12 @@ Parola ve oturum anahtarı localStorage'a yazılmaz. Kimlik yanıtları Cache-Co
 Giriş kotası e-posta başına 10, IP başına 50 deneme / 5 dakika; kayıt kotası IP başına 20'dir.
 Başarılı girişler de kotaya dahildir. Kota dolduğunda Retry-After döner.
 IP, doğrudan bağlantı bilgisidir; uygulama X-Forwarded-For başlığını kendisi kabul etmez.
-Proxy arkasında Uvicorn'un güvenilir proxy ayarlarını açıkça yap; aksi halde tüm kullanıcılar
-proxy IP'sinin kotasını paylaşabilir. Key'ler kimliklerin hash'idir, düz e-posta/IP değildir.
+Yerel Compose Uvicorn proxy başlıklarını kapatır; istemci sahte X-Forwarded-For
+ile IP kotasını değiştiremez. Proxy ile dağıtımda yalnız güvenilir proxy adresleri
+tanımlanmalıdır; aksi halde tüm kullanıcılar proxy IP'sinin kotasını paylaşabilir.
+Key'ler Redis sunucu sırrıyla, ayrı `intihal-rate-limit` alanında HMAC-SHA256 olarak
+üretilir; düz e-posta/IP değildir ve yalnız veritabanını okuyarak sözlük tahmini yapılamaz.
+Yükleme kotası ve redaction ayrıntıları [istek koruması](request-protection.md) belgesindedir.
 
 ## Çalıştırma ve admin oluşturma
 

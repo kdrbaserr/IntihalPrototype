@@ -2,13 +2,28 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 from pydantic import BaseModel, BeforeValidator, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from intihal_api.api.analysis_schemas import AnalysisResponse
-from intihal_api.api.dependencies import CurrentUser, DatabaseSession, ObjectStorage
+from intihal_api.api.dependencies import (
+    CurrentUser,
+    DatabaseSession,
+    ObjectStorage,
+    require_upload_rate,
+)
 from intihal_api.api.document_access import (
     owned_analyses_statement,
     owned_document,
@@ -52,7 +67,12 @@ class DocumentResponse(BaseModel):
         return safe_failure_code(value)
 
 
-@router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=DocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_upload_rate)],
+)
 async def create_document(
     file: Annotated[UploadFile, File(description="PDF, DOCX veya TXT; en fazla 20 MB")],
     current_user: CurrentUser,

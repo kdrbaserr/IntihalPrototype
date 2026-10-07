@@ -12,7 +12,9 @@ from intihal_api.api.auth import router as auth_router
 from intihal_api.api.documents import router as documents_router
 from intihal_api.api.errors import install_error_handling
 from intihal_api.api.health import router as health_router
+from intihal_api.api.upload_limits import UploadBodyLimitMiddleware
 from intihal_api.core.config import get_settings
+from intihal_api.core.redaction import install_private_logging
 from intihal_api.storage import ObjectStorageService, create_object_storage_service
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,7 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
     """Create and configure the FastAPI application."""
 
     settings = get_settings()
+    install_private_logging()
     storage = storage_service or create_object_storage_service(settings)
 
     @asynccontextmanager
@@ -39,6 +42,7 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
         debug=False,  # debug exception pages would expose tracebacks to API clients
         lifespan=lifespan,
     )
+    application.add_middleware(UploadBodyLimitMiddleware, prefix=settings.api_v1_prefix)
     install_error_handling(application)
     application.add_middleware(
         CORSMiddleware,
@@ -46,7 +50,7 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "X-CSRF-Protection"],
-        expose_headers=["X-Request-ID"],
+        expose_headers=["X-Request-ID", "Retry-After"],
     )
 
     # `/health` is convenient for local checks; the versioned path is the

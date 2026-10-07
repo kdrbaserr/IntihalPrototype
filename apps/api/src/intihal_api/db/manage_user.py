@@ -35,7 +35,7 @@ async def provision(email: str, name: str, role: str, password: str) -> None:
                 resource_id=user.id,
             )
             await session.commit()
-            print(f"Provisioned {body.email} with role {role}; previous sessions revoked.")
+            print(f"Provisioned user {user.id} with role {role}; previous sessions revoked.")
     finally:
         await engine.dispose()
 

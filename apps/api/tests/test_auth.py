@@ -192,7 +192,7 @@ def test_login_throttling_is_persisted_and_errors_never_expose_passwords(caplog,
         def now(cls, tz=None):
             return datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
 
-    monkeypatch.setattr("intihal_api.core.auth_throttle.datetime", FixedDateTime)
+    monkeypatch.setattr("intihal_api.core.rate_limit.datetime", FixedDateTime)
 
     async def scenario():
         async with auth_api() as (client, _):

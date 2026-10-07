@@ -1,4 +1,6 @@
 PUBLIC_MESSAGES = {
+    "upload_rate_limited": "Çok fazla yükleme denemesi. Birkaç dakika sonra yeniden deneyin.",
+    "request_too_large": "Yükleme isteği boyut sınırını aşıyor. En fazla 20 MB dosya gönderin.",
     "document_processing": "Belge işleniyor. Analiz tamamlandıktan sonra silmeyi yeniden deneyin.",
     "document_storage_mismatch": "Belgenin depolama kaydı doğrulanamadı; silme yapılmadı.",
     "document_cleanup_pending": (

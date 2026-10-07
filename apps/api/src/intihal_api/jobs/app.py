@@ -1,9 +1,18 @@
 from urllib.parse import quote
 
 from celery import Celery, Task
+from celery.signals import after_setup_logger, after_setup_task_logger
 from kombu import Queue
 
 from intihal_api.core.config import Settings, get_settings
+from intihal_api.core.redaction import install_private_logging
+
+
+@after_setup_logger.connect
+@after_setup_task_logger.connect
+def install_worker_privacy(**kwargs) -> None:
+    install_private_logging()
+
 
 DEFAULT_QUEUE = "intihal.default"
 DOCUMENTS_QUEUE = "intihal.documents"
@@ -17,6 +26,7 @@ class TransientJobError(Exception):
 
 def create_celery_app(settings: Settings | None = None) -> Celery:
     settings = settings or get_settings()
+    install_private_logging()
     password = quote(settings.redis_password.get_secret_value(), safe="")
     redis_base = f"redis://:{password}@{settings.redis_host}:{settings.redis_port}"
 
