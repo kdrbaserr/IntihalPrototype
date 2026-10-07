@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { MatchEvidence, filterMatches, mergeMatchRanges, SCORE_LABELS, scoreLevel } from "./match-ranges";
 import { MatchDetail, formatScore as percent } from "./match-detail";
+import { PrintMetadata, PrintReport } from "./print-report";
 
 function sourceUrl(value: string | null) {
   if (!value) return null;
@@ -23,6 +24,41 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
   const [minimumScore, setMinimumScore] = useState(0);
   const controlId = useId();
   const [error, setError] = useState("");
+  const [printData, setPrintData] = useState<{ metadata: PrintMetadata; filename: string } | null>(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [printError, setPrintError] = useState("");
+  const printRequest = useRef(false);
+  const printAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => printAbort.current?.abort(), []);
+  async function preparePrint() {
+    if (printRequest.current) return;
+    printRequest.current = true;
+    const controller = new AbortController();
+    printAbort.current = controller;
+    setPrintLoading(true);
+    setPrintError("");
+    try {
+      const options = { headers: { "X-User-ID": userId }, signal: controller.signal };
+      const response = await fetch(`${apiBaseUrl}/analyses/${analysisId}`, options);
+      if (!response.ok) throw new Error("Analysis metadata unavailable");
+      const metadata = await response.json();
+      if (metadata.id !== analysisId || metadata.status !== "completed" || !metadata.document_id) {
+        throw new Error("Invalid analysis metadata");
+      }
+      const documentResponse = await fetch(`${apiBaseUrl}/documents/${metadata.document_id}`, options);
+      if (!documentResponse.ok) throw new Error("Document metadata unavailable");
+      const document = await documentResponse.json();
+      if (document.id !== metadata.document_id || typeof document.original_filename !== "string") {
+        throw new Error("Invalid document metadata");
+      }
+      if (!controller.signal.aborted) setPrintData({ metadata, filename: document.original_filename });
+    } catch {
+      if (!controller.signal.aborted) setPrintError("Yazdırma bilgileri alınamadı. Yeniden deneyebilirsin.");
+    } finally {
+      printRequest.current = false;
+      if (!controller.signal.aborted) setPrintLoading(false);
+    }
+  }
   const filtered = useMemo(() => filterMatches(result ?? [], sourceId, minimumScore / 100),
     [result, sourceId, minimumScore]);
   const groups = useMemo(() => mergeMatchRanges(filtered), [filtered]);
@@ -70,7 +106,12 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
   if (!opened) return <button type="button" className="upload-button" onClick={() => setOpened(true)}>
     Eşleşmeleri göster
   </button>;
-  return <section className="match-report" aria-label="Eşleşme raporu">
+  return <>
+    {printData && result && <PrintReport metadata={printData.metadata} filename={printData.filename}
+      matches={filtered} total={result.length} minimumScore={minimumScore}
+      sourceLabel={sources.find((source) => source.source_document_id === sourceId)?.title ?? "Tüm kaynaklar"}
+      onClose={() => setPrintData(null)} />}
+    <section className="match-report" aria-label="Eşleşme raporu">
     <h3>Eşleşen bölümler</h3>
     <ul className="match-legend" aria-label="Skor renkleri">
       <li data-level="low">Düşük: %50 altı</li>
@@ -79,6 +120,12 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
     </ul>
     <p className="match-note">Çakışan aralıklar birleştirilir; bölüm rengi en yüksek eşleşme skoruna göre seçilir.
       Skor, metin parçalarının benzerliğidir; belgenin genel intihal yüzdesi değildir.</p>
+    {result !== null && !error && <div className="match-print-actions">
+      <button type="button" disabled={printLoading} onClick={preparePrint}>
+        {printLoading ? "Yazdırma görünümü hazırlanıyor…" : "Yazdırılabilir görünüm"}
+      </button>
+      {printError && <p role="alert">{printError}</p>}
+    </div>}
     {error ? <div role="alert" className="analysis-error"><p>{error}</p>
       <button type="button" onClick={() => { setError(""); setResult(null); setRefresh((value) => value + 1); }}>
         Raporu yeniden yükle
@@ -128,5 +175,5 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
             </article>;
           })}
         </>}
-  </section>;
+  </section></>;
 }

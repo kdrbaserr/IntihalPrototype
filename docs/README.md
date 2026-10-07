@@ -29,6 +29,7 @@ Burada zamanla şunlar tutulacaktır:
   (`match-evidence-api.md`).
 - çakışan aralıkların birleştirilmesi ve skor renkleri (`match-highlighting.md`).
 - kaynak/minimum skor filtreleri ve eşleşme ayrıntıları (`match-filters-details.md`).
+- yöntem, tarih, kaynaklar ve uyarı içeren yazdırılabilir görünüm (`printable-report.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

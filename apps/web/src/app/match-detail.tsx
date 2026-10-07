@@ -4,10 +4,11 @@ export function formatScore(score: number) {
   return new Intl.NumberFormat("tr-TR", { style: "percent", maximumFractionDigits: 1 }).format(score);
 }
 
-export function MatchDetail({ match }: { match: MatchEvidence }) {
+export function MatchDetail({ match, printable = false }: { match: MatchEvidence; printable?: boolean }) {
   const components = match.score_components;
-  return <details className="match-detail">
-    <summary>Eşleşme ayrıntısı</summary>
+  const Container = printable ? "div" : "details";
+  return <Container className="match-detail">
+    {printable ? <h4>Eşleşme ayrıntısı</h4> : <summary>Eşleşme ayrıntısı</summary>}
     <dl>
       <dt>Belge sayfası</dt><dd>{match.document.page_number ?? "Sayfa bilgisi yok"}</dd>
       <dt>Kaynak dosya</dt><dd>{match.source.original_filename ?? "Belirtilmedi"}</dd>
@@ -38,5 +39,5 @@ export function MatchDetail({ match }: { match: MatchEvidence }) {
       </table></div>
       <p>Katkı = skor × ağırlık. Katkıların toplamı, yuvarlama farklarıyla toplam benzerlik skorunu verir.</p>
     </> : <p>Bu eşleşmenin skor bileşenleri kaydedilmemiş.</p>}
-  </details>;
+  </Container>;
 }

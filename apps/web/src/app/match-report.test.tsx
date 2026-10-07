@@ -20,7 +20,7 @@ function open() {
 }
 
 describe("MatchReport", () => {
-  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
   it("loads all pages before merging cross-page overlap and preserves both sources", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(page([match("a", 0, 5, "0.6")], 2))
       .mockResolvedValueOnce(page([match("b", 3, 10, "0.9")], 2));
@@ -143,5 +143,35 @@ describe("MatchReport", () => {
     fireEvent.click(screen.getByText("Eşleşme ayrıntısı"));
     expect(screen.getByText("Bu eşleşmenin skor bileşenleri kaydedilmemiş.")).toBeVisible();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("fetches analysis and document metadata before opening filtered print preview", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(page([match("a", 0, 3, "0.8"), match("b", 7, 10, "0.9")]))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "analysis-id", status: "completed",
+        document_id: "doc-id", algorithm_version: "classical-hybrid-v1",
+        completed_at: "2026-10-07T10:00:00Z", started_at: null, similarity_threshold: "0.8" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "doc-id", original_filename: "belgem.pdf" }) });
+    vi.stubGlobal("fetch", fetcher);
+    open();
+    await screen.findByText("2 eşleşme, 2 bölümde gösteriliyor.");
+    fireEvent.change(screen.getByRole("combobox", { name: "Kaynak" }), { target: { value: "a" } });
+    fireEvent.click(screen.getByRole("button", { name: "Yazdırılabilir görünüm" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("1 / 2 eşleşme, 1 birleşik bölüm.")).toBeVisible();
+    expect(within(dialog).queryByText("Kaynak b", { selector: "strong" })).not.toBeInTheDocument();
+    expect(fetcher.mock.calls[1][0]).toBe("/api/v1/analyses/analysis-id");
+    expect(fetcher.mock.calls[2][0]).toBe("/api/v1/documents/doc-id");
+    expect(fetcher.mock.calls[1][1].headers).toEqual({ "X-User-ID": "owner" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Önizlemeyi kapat" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it("does not open a printable report if authoritative metadata cannot be loaded", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(page([]))
+      .mockResolvedValue({ ok: false }));
+    open();
+    await screen.findByText("Bu analizde eşleşme bulunamadı.");
+    fireEvent.click(screen.getByRole("button", { name: "Yazdırılabilir görünüm" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Yazdırma bilgileri alınamadı");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
