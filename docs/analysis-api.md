@@ -15,7 +15,8 @@ yerini tutan geçici geliştirme mekanizmasıdır.
 
 Önceki `POST /documents/{document_id}/analysis` yolu aynı iş akışını kullanmaya
 devam eder. İki yoldan tekrar istek göndermek ikinci bir aktif analiz açmaz.
-Veritabanına yeni alan eklenmedi; bu değişiklik için yeni migration yoktur.
+Temel endpointler mevcut tablolardan yararlanır. Kalıcı skor bileşenleri için
+`20261006_08` migration'ı `matches.score_components` alanını ekler.
 
 ## Oluşturma: neyi, nasıl ve neden yaptık?
 
@@ -155,6 +156,10 @@ sağlar. Sahiplik koşulu SQL sorgusunun içindedir; veri döndürüldükten son
 istemcinin filtrelemesine güvenilmez.
 
 ## Örnek kullanım
+
+Eşleşme aralıkları, kaynak/sayfa alanları ve kalıcı skor bileşenlerinin sözleşmesi
+[eşleşme kanıtı belgesinde](match-evidence-api.md) açıklanır. Yeni skor alanları
+için `20261006_08` migration'ı gerekir; eski eşleşmelerde bileşenler null olur.
 
 Hata yanıtları `detail.code`, güvenli `detail.message` ve `detail.trace_id`
 alanlarını içerir. `X-Request-ID` aynı takip kodunu taşır. Ayrıntılar ve ⭐ notlar

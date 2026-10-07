@@ -395,6 +395,7 @@ class Match(BaseModel):
         nullable=False,
     )
     similarity_score: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False)
+    score_components: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     document_match_start: Mapped[int] = mapped_column(nullable=False)
     document_match_end: Mapped[int] = mapped_column(nullable=False)
     source_match_start: Mapped[int] = mapped_column(nullable=False)

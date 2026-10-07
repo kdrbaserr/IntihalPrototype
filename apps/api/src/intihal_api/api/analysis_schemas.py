@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -40,15 +41,16 @@ class AnalysisDetailResponse(AnalysisResponse):
 
 class EvidenceResponse(BaseModel):
     chunk_id: UUID
-    page_number: int | None
-    char_start: int
-    char_end: int
+    page_number: int | None = Field(description="1-based PDF page; null if no reliable page exists")
+    char_start: int = Field(ge=0, description="Inclusive offset in normalized full text")
+    char_end: int = Field(ge=0, description="Exclusive offset in normalized full text")
     text: str
 
 
 class SourceEvidenceResponse(EvidenceResponse):
     source_document_id: UUID
     title: str
+    original_filename: str
     author: str | None
     publisher: str | None
     source_url: str | None
@@ -57,11 +59,28 @@ class SourceEvidenceResponse(EvidenceResponse):
     attribution_text: str | None
 
 
+class ScoreSignalResponse(BaseModel):
+    score: Decimal = Field(ge=0, le=1)
+    weight: Decimal = Field(ge=0, le=1)
+    contribution: Decimal = Field(ge=0, le=1)
+
+
+class ScoreComponentsResponse(BaseModel):
+    scope: Literal["chunk_pair"]
+    algorithm_version: str
+    word_tfidf: ScoreSignalResponse
+    character_tfidf: ScoreSignalResponse
+    word_overlap: ScoreSignalResponse
+
+
 class MatchResponse(BaseModel):
     id: UUID
     analysis_id: UUID
     method: MatchMethod
     similarity_score: Decimal = Field(ge=0, le=1)
+    score_components: ScoreComponentsResponse | None = Field(
+        default=None, description="Persisted analysis-time signals; null for legacy matches"
+    )
     matched_token_count: int
     explanation: str | None
     document: EvidenceResponse
@@ -69,6 +88,8 @@ class MatchResponse(BaseModel):
 
 
 class MatchPageResponse(BaseModel):
+    offset_unit: Literal["unicode_code_points"] = "unicode_code_points"
+    range_convention: Literal["start_inclusive_end_exclusive"] = "start_inclusive_end_exclusive"
     analysis_id: UUID
     total: int
     limit: int
