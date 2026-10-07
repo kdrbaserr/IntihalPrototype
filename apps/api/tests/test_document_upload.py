@@ -13,7 +13,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from file_samples import make_pdf_bytes
-from intihal_api.db.models import Document, DocumentStatus, User
+from intihal_api.db.models import AuditEvent, Document, DocumentStatus, User
 from intihal_api.storage import StorageConnectionError, StoredObject
 from intihal_api.uploads import (
     DocumentUploadService,
@@ -101,6 +101,9 @@ class FakeSession:
     def add(self, instance: object) -> None:
         self.added.append(instance)
 
+    def add_all(self, instances: list[object]) -> None:
+        self.added.extend(instances)
+
     async def commit(self) -> None:
         self.commit_calls += 1
         if self.commit_error is not None:
@@ -141,7 +144,8 @@ async def test_upload_saves_hash_size_mime_and_original_filename() -> None:
     assert storage.uploaded_content == content
     assert storage.uploaded_size == len(content)
     assert storage.uploaded_content_type == "application/pdf"
-    assert session.added == [document]
+    assert session.added[0] is document
+    assert isinstance(session.added[1], AuditEvent)
     assert session.commit_calls == 1
     assert session.rollback_calls == 0
     assert stream.tell() == 0

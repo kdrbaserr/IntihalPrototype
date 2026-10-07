@@ -4,6 +4,7 @@ import asyncio
 
 from sqlalchemy import delete
 
+from intihal_api.core.audit import AuditAction, AuditActor, record_audit
 from intihal_api.core.config import get_settings
 from intihal_api.core.security import hash_password
 from intihal_api.db.models import User, UserRole, UserSession
@@ -31,12 +32,24 @@ async def seed_local_demo_user() -> None:
                     password_hash=encoded,
                 )
             )
+            record_audit(
+                session,
+                action=AuditAction.USER_PROVISION,
+                actor_kind=AuditActor.OPERATOR,
+                resource_id=settings.demo_user_id,
+            )
             await session.commit()
             print(f"Created local demo user: {settings.demo_user_id}")
         else:
             user.role = UserRole.ADMIN
             user.password_hash = encoded
             await session.execute(delete(UserSession).where(UserSession.user_id == user.id))
+            record_audit(
+                session,
+                action=AuditAction.USER_PROVISION,
+                actor_kind=AuditActor.OPERATOR,
+                resource_id=user.id,
+            )
             await session.commit()
             print(f"Local demo user already exists: {settings.demo_user_id}")
 

@@ -3,10 +3,12 @@
 import argparse
 import asyncio
 from getpass import getpass
+from uuid import uuid4
 
 from sqlalchemy import delete, select
 
 from intihal_api.api.auth import Registration
+from intihal_api.core.audit import AuditAction, AuditActor, record_audit
 from intihal_api.core.security import hash_password
 from intihal_api.db.models import User, UserRole, UserSession
 from intihal_api.db.session import AsyncSessionFactory, engine
@@ -19,13 +21,19 @@ async def provision(email: str, name: str, role: str, password: str) -> None:
         async with AsyncSessionFactory() as session:
             user = await session.scalar(select(User).where(User.email == body.email))
             if user is None:
-                user = User(email=body.email, display_name=body.display_name)
+                user = User(id=uuid4(), email=body.email, display_name=body.display_name)
                 session.add(user)
             else:
                 await session.execute(delete(UserSession).where(UserSession.user_id == user.id))
             user.password_hash = encoded
             user.display_name = body.display_name
             user.role = UserRole(role)
+            record_audit(
+                session,
+                action=AuditAction.USER_PROVISION,
+                actor_kind=AuditActor.OPERATOR,
+                resource_id=user.id,
+            )
             await session.commit()
             print(f"Provisioned {body.email} with role {role}; previous sessions revoked.")
     finally:

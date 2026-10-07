@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.concurrency import run_in_threadpool
 
 from intihal_api.api.dependencies import AdminUser, DatabaseSession, ObjectStorage
+from intihal_api.core.audit import AuditAction, record_audit
 from intihal_api.corpus import (
     SourceChecksumMismatchError,
     SourceDocumentIngestionService,
@@ -94,6 +95,7 @@ async def create_source_document(
             content_type=file.content_type,
             stream=file.file,
             session=session,
+            actor_id=_admin.id,
         )
         await session.refresh(source)
         return source
@@ -146,7 +148,10 @@ async def list_source_documents(
         .offset(offset)
         .limit(limit)
     )
-    return list(sources)
+    result = list(sources)
+    record_audit(session, action=AuditAction.SOURCE_LIST, actor_id=_admin.id)
+    await session.commit()
+    return result
 
 
 @router.post("/{source_id}/disable", response_model=SourceDocumentResponse)
@@ -157,6 +162,9 @@ async def disable_source_document(
 ) -> SourceDocument:
     source = await _get_source_or_404(source_id, session)
     source.status = SourceDocumentStatus.DISABLED
+    record_audit(
+        session, action=AuditAction.SOURCE_DISABLE, actor_id=_admin.id, resource_id=source_id
+    )
     await session.commit()
     await session.refresh(source)
     return source
@@ -196,6 +204,7 @@ async def reindex_source_document(
             source_document=source,
             stream=BytesIO(content),
             session=session,
+            actor_id=_admin.id,
         )
         await session.refresh(source)
         return source

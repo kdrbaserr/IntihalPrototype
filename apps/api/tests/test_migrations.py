@@ -17,6 +17,7 @@ API_DIR = Path(__file__).resolve().parents[1]
 TEST_DATABASE_ENV = "INTIHAL_TEST_DATABASE_URL"
 
 EXPECTED_TABLES = {
+    "audit_events",
     "users",
     "user_sessions",
     "authentication_throttles",

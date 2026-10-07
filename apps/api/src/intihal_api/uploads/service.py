@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.core.audit import AuditAction, record_audit
 from intihal_api.core.diagnostics import log_error
 from intihal_api.db.models import Document, DocumentStatus
 from intihal_api.storage import StorageError, StoredObject, build_document_storage_key
@@ -21,6 +22,8 @@ MAX_ORIGINAL_FILENAME_LENGTH = 255
 
 class DocumentSession(Protocol):
     def add(self, instance: object) -> None: ...
+
+    def add_all(self, instances: list[object]) -> None: ...
 
     async def commit(self) -> None: ...
 
@@ -103,6 +106,12 @@ class DocumentUploadService:
 
         try:
             session.add(document)
+            record_audit(
+                session,
+                action=AuditAction.DOCUMENT_UPLOAD,
+                actor_id=owner_id,
+                resource_id=document_id,
+            )
             await session.commit()
         except Exception:
             await session.rollback()

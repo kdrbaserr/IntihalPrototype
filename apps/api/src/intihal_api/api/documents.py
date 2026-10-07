@@ -159,7 +159,7 @@ async def delete_document(
     if document is None:
         raise HTTPException(404, detail={"code": "document_not_found"})
     try:
-        await cleanup_document(document, session, storage)
+        await cleanup_document(document, session, storage, actor_id=current_user.id)
     except DocumentCleanupError as error:
         raise HTTPException(409, detail={"code": error.code}) from error
     except StorageError as error:
