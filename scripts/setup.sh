@@ -32,8 +32,8 @@ docker compose --env-file .env up --detach --build --wait --wait-timeout 300
 echo "[setup] Veritabanı migration'ları uygulanıyor..."
 docker compose --env-file .env exec --no-TTY api alembic upgrade head
 
-echo "[setup] Yerel demo kullanıcı hazırlanıyor..."
-docker compose --env-file .env exec --no-TTY api python -m intihal_api.db.seed
+echo "[setup] Web ekranından kullanıcı hesabı oluşturabilirsiniz."
+echo "[setup] Admin için: docker compose exec api python -m intihal_api.db.manage_user EMAIL --name NAME --role admin"
 
 echo "[setup] Sentetik örnek kaynak havuzu hazırlanıyor..."
 docker compose --env-file .env exec --no-TTY api python -m intihal_api.corpus.sample_seed

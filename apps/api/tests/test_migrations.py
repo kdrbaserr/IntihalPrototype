@@ -18,6 +18,8 @@ TEST_DATABASE_ENV = "INTIHAL_TEST_DATABASE_URL"
 
 EXPECTED_TABLES = {
     "users",
+    "user_sessions",
+    "authentication_throttles",
     "documents",
     "source_documents",
     "source_chunks",

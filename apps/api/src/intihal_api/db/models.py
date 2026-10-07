@@ -21,7 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from intihal_api.db.base import BaseModel
+from intihal_api.db.base import Base, BaseModel
 
 
 class UserStatus(enum.StrEnum):
@@ -109,9 +109,25 @@ class User(BaseModel):
         nullable=False,
     )
 
+    password_hash: Mapped[str | None] = mapped_column(String(255))
+
     documents: Mapped[list[Document]] = relationship(
         back_populates="owner",
         passive_deletes=True,
+    )
+
+
+class UserSession(BaseModel):
+    """Only the digest of a random browser credential is persisted."""
+
+    __tablename__ = "user_sessions"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
     )
 
 
@@ -405,3 +421,14 @@ class Match(BaseModel):
     analysis: Mapped[Analysis] = relationship(back_populates="matches")
     document_chunk: Mapped[DocumentChunk] = relationship(back_populates="matches")
     source_chunk: Mapped[SourceChunk] = relationship(back_populates="matches")
+
+
+class AuthenticationThrottle(Base):
+    """Shared fixed-window limits across API processes, without storing raw identities."""
+
+    __tablename__ = "authentication_throttles"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    attempts: Mapped[int] = mapped_column(nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )

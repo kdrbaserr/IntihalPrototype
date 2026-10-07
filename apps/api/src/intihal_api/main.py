@@ -8,6 +8,7 @@ from starlette.concurrency import run_in_threadpool
 
 from intihal_api.api.admin_sources import router as admin_sources_router
 from intihal_api.api.analyses import router as analyses_router
+from intihal_api.api.auth import router as auth_router
 from intihal_api.api.documents import router as documents_router
 from intihal_api.api.errors import install_error_handling
 from intihal_api.api.health import router as health_router
@@ -42,9 +43,9 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_credentials=False,
+        allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type", "X-User-ID"],
+        allow_headers=["Content-Type", "X-CSRF-Protection"],
         expose_headers=["X-Request-ID"],
     )
 
@@ -52,6 +53,7 @@ def create_app(storage_service: ObjectStorageService | None = None) -> FastAPI:
     # stable contract consumed by Docker and future clients.
     application.include_router(health_router, include_in_schema=False)
     application.include_router(health_router, prefix=settings.api_v1_prefix)
+    application.include_router(auth_router, prefix=settings.api_v1_prefix)
     application.include_router(documents_router, prefix=settings.api_v1_prefix)
     application.include_router(analyses_router, prefix=settings.api_v1_prefix)
     application.include_router(admin_sources_router, prefix=settings.api_v1_prefix)

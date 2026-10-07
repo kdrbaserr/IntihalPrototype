@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from auth_helpers import session_headers
 from file_samples import make_pdf_bytes
 from intihal_api.db.models import Document, User, UserStatus
 from intihal_api.db.session import get_db_session
@@ -131,6 +132,9 @@ async def test_document_endpoints_enforce_ownership(
 
     try:
         await seed_users(session_factory)
+        async with session_factory() as session:
+            identities = {user_id: await session_headers(session, user_id) for user_id in
+                          [ACTIVE_USER_ID, OTHER_USER_ID, DISABLED_USER_ID]}
         async with application.router.lifespan_context(application):
             transport = ASGITransport(app=application)
             async with AsyncClient(transport=transport, base_url="http://testserver") as client:
@@ -145,14 +149,14 @@ async def test_document_endpoints_enforce_ownership(
 
                 disabled_identity = await client.get(
                     "/api/v1/documents",
-                    headers={"X-User-ID": str(DISABLED_USER_ID)},
+                    headers=identities[DISABLED_USER_ID],
                 )
                 assert disabled_identity.status_code == 403
 
                 pdf_content = make_pdf_bytes()
                 upload = await client.post(
                     "/api/v1/documents",
-                    headers={"X-User-ID": str(ACTIVE_USER_ID)},
+                    headers=identities[ACTIVE_USER_ID],
                     files={"file": ("Tez.pdf", pdf_content, "application/pdf")},
                 )
                 assert upload.status_code == 201
@@ -165,21 +169,21 @@ async def test_document_endpoints_enforce_ownership(
 
                 owner_list = await client.get(
                     "/api/v1/documents",
-                    headers={"X-User-ID": str(ACTIVE_USER_ID)},
+                    headers=identities[ACTIVE_USER_ID],
                 )
                 assert owner_list.status_code == 200
                 assert [item["id"] for item in owner_list.json()] == [uploaded_document["id"]]
 
                 other_user_list = await client.get(
                     "/api/v1/documents",
-                    headers={"X-User-ID": str(OTHER_USER_ID)},
+                    headers=identities[OTHER_USER_ID],
                 )
                 assert other_user_list.status_code == 200
                 assert other_user_list.json() == []
 
                 invalid_upload = await client.post(
                     "/api/v1/documents",
-                    headers={"X-User-ID": str(ACTIVE_USER_ID)},
+                    headers=identities[ACTIVE_USER_ID],
                     files={"file": ("fake.pdf", b"not a pdf", "application/pdf")},
                 )
                 assert invalid_upload.status_code == 400

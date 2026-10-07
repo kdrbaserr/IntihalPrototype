@@ -23,7 +23,7 @@ DEFAULT_CODES = {
 def error_response(status: int, code: str, identifier: str, headers=None) -> JSONResponse:
     return JSONResponse(
         status_code=status,
-        headers=headers,
+        headers={**(headers or {}), "Cache-Control": "no-store"},
         content={
             "detail": {"code": code, "message": PUBLIC_MESSAGES[code], "trace_id": identifier}
         },

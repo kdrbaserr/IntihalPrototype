@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from auth_helpers import session_headers
 from intihal_api.core.config import Settings
 from intihal_api.db.models import Analysis, Document, DocumentStatus, Match, User
 from intihal_api.db.session import get_db_session
@@ -108,7 +109,7 @@ def test_postgres_concurrent_start_and_retry_create_one_run(workflow_database):
                 async with AsyncClient(
                     transport=ASGITransport(app=application), base_url="http://test"
                 ) as client:
-                    headers = {"X-User-ID": str(document.owner_id)}
+                    headers = await session_headers(session, document.owner_id)
                     starts = await asyncio.gather(
                         client.post(
                             "/api/v1/analyses",

@@ -88,13 +88,8 @@ try {
         ) `
         -FailureMessage "Veritabanı migration'ları uygulanamadı. API loglarını kontrol edin."
 
-    Write-Host "[setup] Yerel web denemesi için demo kullanıcı hazırlanıyor..."
-    Invoke-DockerCommand `
-        -DockerArguments @(
-            "compose", "--env-file", ".env", "exec", "--no-TTY", "api",
-            "python", "-m", "intihal_api.db.seed"
-        ) `
-        -FailureMessage "Yerel demo kullanıcı hazırlanamadı. API loglarını kontrol edin."
+    Write-Host "[setup] Web ekranından kullanıcı hesabı oluşturabilirsiniz."
+    Write-Host "[setup] Admin için: docker compose exec api python -m intihal_api.db.manage_user EMAIL --name NAME --role admin"
 
     Write-Host "[setup] Sentetik örnek kaynak havuzu hazırlanıyor..."
     Invoke-DockerCommand `

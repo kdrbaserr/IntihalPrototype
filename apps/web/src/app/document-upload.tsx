@@ -6,8 +6,6 @@ import { DocumentWorkflow } from "./document-workflow";
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
-const DEMO_USER_ID =
-  process.env.NEXT_PUBLIC_DEMO_USER_ID ?? "11111111-1111-1111-1111-111111111111";
 
 const ALLOWED_TYPES = new Map([
   ["pdf", "application/pdf"],
@@ -80,7 +78,7 @@ export function responseErrorMessage(xhr: XMLHttpRequest): string {
   return "Dosya yüklenemedi. Lütfen yeniden deneyin.";
 }
 
-export function DocumentUpload() {
+export function DocumentUpload({ onSessionExpired }: { onSessionExpired?: () => void } = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
@@ -122,7 +120,8 @@ export function DocumentUpload() {
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}/documents`);
-    xhr.setRequestHeader("X-User-ID", DEMO_USER_ID);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("X-CSRF-Protection", "1");
 
     setUploadState("uploading");
     setProgress(0);
@@ -135,6 +134,7 @@ export function DocumentUpload() {
     };
 
     xhr.onload = () => {
+      if (xhr.status === 401 && onSessionExpired) { onSessionExpired(); return; }
       if (xhr.status >= 200 && xhr.status < 300) {
         setProgress(100);
         setUploadState("success");
@@ -248,7 +248,7 @@ export function DocumentUpload() {
           {isUploading ? "Yükleniyor…" : uploadState === "success" ? "Yükleme tamamlandı" : "Belgeyi yükle"}
         </button>
         {documentId && <DocumentWorkflow key={documentId} documentId={documentId}
-          apiBaseUrl={API_BASE_URL} userId={DEMO_USER_ID} />}
+          apiBaseUrl={API_BASE_URL} onSessionExpired={onSessionExpired} />}
       </div>
     </section>
   );

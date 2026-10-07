@@ -1,31 +1,44 @@
+from datetime import UTC, datetime
 from typing import Annotated
-from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intihal_api.db.models import User, UserRole, UserStatus
+from intihal_api.core.config import get_settings
+from intihal_api.core.security import token_digest
+from intihal_api.db.models import User, UserRole, UserSession, UserStatus
 from intihal_api.db.session import get_db_session
 from intihal_api.storage import ObjectStorageService
 
 DatabaseSession = Annotated[AsyncSession, Depends(get_db_session)]
 
 
-async def require_current_user(
-    session: DatabaseSession,
-    x_user_id: Annotated[str | None, Header(alias="X-User-ID")] = None,
-) -> User:
-    """Resolve the temporary pre-auth identity and require an active database user."""
+def require_csrf(request: Request) -> None:
+    """A custom header forces browser preflight; reject untrusted origins as well."""
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
+        return
+    origin = request.headers.get("origin")
+    if request.headers.get("X-CSRF-Protection") != "1" or (
+        origin is not None and origin not in get_settings().cors_origins
+    ):
+        raise HTTPException(
+            403, detail={"code": "csrf_rejected", "message": "İstek kaynağı doğrulanamadı."}
+        )
 
-    if x_user_id is None:
+
+async def require_current_user(request: Request, session: DatabaseSession) -> User:
+    token = request.cookies.get(get_settings().session_cookie_name)
+    if not token or len(token) > 128:
         raise _authentication_error()
-    try:
-        user_id = UUID(x_user_id)
-    except ValueError as error:
-        raise _authentication_error() from error
-
-    user = await session.scalar(select(User).where(User.id == user_id))
+    user = await session.scalar(
+        select(User)
+        .join(UserSession, UserSession.user_id == User.id)
+        .where(
+            UserSession.token_hash == token_digest(token),
+            UserSession.expires_at > datetime.now(UTC),
+        )
+    )
     if user is None:
         raise _authentication_error()
     if user.status is UserStatus.DISABLED:
@@ -33,6 +46,7 @@ async def require_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "user_disabled", "message": "Kullanıcı hesabı devre dışı."},
         )
+    require_csrf(request)
     return user
 
 
@@ -45,9 +59,8 @@ def _authentication_error() -> HTTPException:
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail={
             "code": "authentication_required",
-            "message": "Geçerli bir kullanıcı kimliği gerekli.",
+            "message": "Giriş yapmanız gerekli.",
         },
-        headers={"WWW-Authenticate": "X-User-ID"},
     )
 
 

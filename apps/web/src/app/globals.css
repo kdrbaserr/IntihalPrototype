@@ -558,3 +558,10 @@ progress::-moz-progress-bar {
     scroll-behavior: auto;
   }
 }
+
+.auth-panel { margin: 2rem 0; padding: 1.5rem; border: 1px solid #cbd5e1; border-radius: 1rem; }
+.auth-panel form { display: grid; gap: 1rem; max-width: 28rem; margin-bottom: 1rem; }
+.auth-panel label { display: grid; gap: .4rem; }
+.auth-panel input { padding: .75rem; border: 1px solid #94a3b8; border-radius: .5rem; color: #0f172a; background: #fff; }
+.auth-panel button { cursor: pointer; }
+.auth-panel button:disabled { cursor: wait; }

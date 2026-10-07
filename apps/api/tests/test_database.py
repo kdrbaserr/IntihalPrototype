@@ -54,6 +54,7 @@ def test_user_model_has_identity_and_status_fields() -> None:
         "display_name",
         "status",
         "role",
+        "password_hash",
         "created_at",
         "updated_at",
     }

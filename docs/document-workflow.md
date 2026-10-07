@@ -141,9 +141,10 @@ Web arayüzünden dosya yükleyip **Analizi başlat** seç. API üzerinden denem
 
 ```powershell
 $documentId = "yuklenen-belgenin-uuid-degeri"
-$headers = @{ "X-User-ID" = "11111111-1111-1111-1111-111111111111" }
-Invoke-RestMethod -Method Post -Headers $headers -Uri "http://localhost:8000/api/v1/documents/$documentId/analysis"
-Invoke-RestMethod -Headers $headers -Uri "http://localhost:8000/api/v1/documents/$documentId"
+# Önce authentication.md giriş örneğiyle $authSession oluşturun.
+$headers = @{ "X-CSRF-Protection" = "1" }
+Invoke-RestMethod -WebSession $authSession -Method Post -Headers $headers -Uri "http://localhost:8000/api/v1/documents/$documentId/analysis"
+Invoke-RestMethod -WebSession $authSession -Headers $headers -Uri "http://localhost:8000/api/v1/documents/$documentId"
 ```
 
 ## Migration ve test sınırları

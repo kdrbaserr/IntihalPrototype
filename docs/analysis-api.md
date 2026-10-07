@@ -2,9 +2,9 @@
 
 ## Eklenen endpointler
 
-Tüm yollar `/api/v1` önekiyle kullanılır. Mevcut prototip kimlik kontrolü için
-`X-User-ID` header'ı gerekir. Bu header gerçek oturum/JWT kimlik doğrulamasının
-yerini tutan geçici geliştirme mekanizmasıdır.
+Tüm yollar `/api/v1` önekiyle kullanılır. Kimlik doğrulama oturum cookie'siyle yapılır;
+POST istekleri `X-CSRF-Protection: 1` başlığını gerektirir. [Giriş örneği](authentication.md)
+ile önce `$authSession` oluşturun.
 
 | İstek | Ne için? | Başarılı cevap |
 | --- | --- | --- |
@@ -161,13 +161,14 @@ alanlarını içerir. `X-Request-ID` aynı takip kodunu taşır. Ayrıntılar ve
 [güvenli hata ve trace belgesinde](error-handling.md) açıklanır.
 
 ```powershell
-$headers = @{ "X-User-ID" = "11111111-1111-1111-1111-111111111111" }
+# Önce authentication.md giriş örneğiyle $authSession oluşturun.
+$headers = @{ "X-CSRF-Protection" = "1" }
 $payload = @{ document_id = "yuklenen-belgenin-uuid-degeri" } | ConvertTo-Json
-$analysis = Invoke-RestMethod -Method Post -Headers $headers -ContentType "application/json" -Body $payload -Uri "http://localhost:8000/api/v1/analyses"
+$analysis = Invoke-RestMethod -WebSession $authSession -Method Post -Headers $headers -ContentType "application/json" -Body $payload -Uri "http://localhost:8000/api/v1/analyses"
 $analysisId = $analysis.id
-Invoke-RestMethod -Headers $headers -Uri "http://localhost:8000/api/v1/analyses/$analysisId"
+Invoke-RestMethod -WebSession $authSession -Headers $headers -Uri "http://localhost:8000/api/v1/analyses/$analysisId"
 # status completed olduktan sonra:
-Invoke-RestMethod -Headers $headers -Uri "http://localhost:8000/api/v1/analyses/$analysisId/matches?limit=20&offset=0"
+Invoke-RestMethod -WebSession $authSession -Headers $headers -Uri "http://localhost:8000/api/v1/analyses/$analysisId/matches?limit=20&offset=0"
 ```
 
 Olay örgüsü: belgeyi yükle → POST ile analiz ID'sini al → GET ile durumu takip et

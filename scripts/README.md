@@ -20,8 +20,8 @@ Uygulamanın asıl iş mantığı bu klasöre konulmayacaktır.
 
 İki script de aynı işi yapar: Docker'ı kontrol eder, eksikse `.env` oluşturur,
 Compose yapılandırmasını doğrular, image'ları build eder ve servisleri başlatır.
-Migration'lardan sonra yerel admin kullanıcısını ve üç belgeli sentetik kaynak
-havuzunu hazırlar. Mevcut `.env` dosyası ve daha önce seed edilmiş kaynaklar korunur.
+Migration'lardan sonra üç belgeli sentetik kaynak havuzunu hazırlar. Kullanıcı
+hesabı web ekranından açılır; admin için `intihal_api.db.manage_user` komutu kullanılır. Mevcut `.env` dosyası ve daha önce seed edilmiş kaynaklar korunur.
 
 Windows:
 
