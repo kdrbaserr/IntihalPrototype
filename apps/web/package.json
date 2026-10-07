@@ -7,10 +7,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src next.config.ts vitest.config.ts vitest.setup.ts",
+    "lint": "eslint src e2e playwright.config.ts next.config.ts vitest.config.ts vitest.setup.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "node e2e/run-playwright.mjs test",
+    "test:e2e:install": "node e2e/install-browser.mjs",
+    "test:e2e:report": "node e2e/run-playwright.mjs show-report"
   },
   "dependencies": {
     "next": "16.3.6",
@@ -18,6 +21,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "26.6.2",

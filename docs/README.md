@@ -30,6 +30,8 @@ Burada zamanla şunlar tutulacaktır:
 - çakışan aralıkların birleştirilmesi ve skor renkleri (`match-highlighting.md`).
 - kaynak/minimum skor filtreleri ve eşleşme ayrıntıları (`match-filters-details.md`).
 - yöntem, tarih, kaynaklar ve uyarı içeren yazdırılabilir görünüm (`printable-report.md`).
+- Playwright ile gerçek tarayıcı yükleme/bekleme/rapor akışı ve kapsam sınırları
+  (`playwright-workflow.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.
