@@ -89,6 +89,18 @@ describe("DocumentUpload", () => {
     expect(expired).toHaveBeenCalledOnce();
   });
 
+  it.each(["7", "30"])("sends the selected %s day retention window", (days) => {
+    render(<DocumentUpload />);
+    fireEvent.change(screen.getByLabelText("Belge saklama süresi"), { target: { value: days } });
+    fireEvent.change(screen.getByLabelText(/bilgisayardan dosya seç/i), {
+      target: { files: [new File(["text"], "test.txt", { type: "text/plain" })] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /belgeyi yükle/i }));
+    const body = MockXMLHttpRequest.latest.send.mock.calls[0][0] as FormData;
+    expect(body.get("retention_days")).toBe(days);
+    expect(screen.getByLabelText("Belge saklama süresi")).toBeDisabled();
+  });
+
   it.each([
     ["no_extractable_text", /analiz edilebilecek metin bulunamadı/i],
     ["ocr_required", /OCR uygulayıp metni aranabilir/i],

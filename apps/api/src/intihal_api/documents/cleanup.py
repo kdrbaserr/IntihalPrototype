@@ -1,5 +1,7 @@
 """Retryable cleanup across PostgreSQL and object storage."""
 
+from datetime import UTC, datetime
+
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
@@ -20,6 +22,8 @@ async def cleanup_document(
     document: Document, session: AsyncSession, storage: ObjectStorageService
 ) -> None:
     """Caller must hold the owner's document row lock; never purge active work."""
+    if document.cleaned_at is not None:
+        return
     if document.status in ACTIVE_STATES:
         raise DocumentCleanupError("document_processing")
     # Do not let a corrupt/legacy location delete an unrelated bucket or corpus object.
@@ -44,4 +48,5 @@ async def cleanup_document(
     await session.execute(delete(Analysis).where(Analysis.document_id == identifier))
     await session.execute(delete(DocumentChunk).where(DocumentChunk.document_id == identifier))
     # Keep only the document's tombstone/metadata for ownership and idempotent retries.
+    document.cleaned_at = datetime.now(UTC)
     await session.commit()

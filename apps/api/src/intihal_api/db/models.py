@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
@@ -137,6 +137,7 @@ class Document(BaseModel):
         CheckConstraint("size_bytes >= 0", name="size_bytes_non_negative"),
         UniqueConstraint("storage_bucket", "storage_key", name="uq_documents_storage_location"),
         Index("ix_documents_owner_id_status", "owner_id", "status"),
+        CheckConstraint("retention_days IN (7, 30)", name="retention_days_valid"),
     )
 
     owner_id: Mapped[UUID] = mapped_column(
@@ -164,6 +165,12 @@ class Document(BaseModel):
     failure_reason: Mapped[str | None] = mapped_column(Text)
     processing_attempts: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retention_days: Mapped[int] = mapped_column(default=7, server_default="7", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC) + timedelta(days=7),
+        nullable=False, index=True,
+    )
+    cleaned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     owner: Mapped[User] = relationship(back_populates="documents")
     chunks: Mapped[list[DocumentChunk]] = relationship(

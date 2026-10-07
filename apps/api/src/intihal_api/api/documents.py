@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
-from pydantic import BaseModel, ConfigDict, field_validator
+from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile, status
+from pydantic import BaseModel, BeforeValidator, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -41,6 +41,8 @@ class DocumentResponse(BaseModel):
     status: DocumentStatus
     created_at: datetime
     updated_at: datetime
+    retention_days: int
+    expires_at: datetime
     failure_reason: str | None = None
     latest_analysis_id: UUID | None = None
 
@@ -56,6 +58,7 @@ async def create_document(
     current_user: CurrentUser,
     session: DatabaseSession,
     storage: ObjectStorage,
+    retention_days: Annotated[Literal[7, 30], BeforeValidator(int), Form()] = 7,
 ) -> Document:
     service = DocumentUploadService(storage)
     try:
@@ -65,6 +68,7 @@ async def create_document(
             content_type=file.content_type,
             stream=file.file,
             session=session,
+            retention_days=retention_days,
         )
     except UploadValidationError as error:
         raise HTTPException(

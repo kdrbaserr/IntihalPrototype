@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unicodedata
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from io import SEEK_SET
 from pathlib import PurePath
@@ -61,7 +62,10 @@ class DocumentUploadService:
         content_type: str | None,
         stream: BinaryIO,
         session: DocumentSession,
+        retention_days: int = 7,
     ) -> Document:
+        if retention_days not in (7, 30):
+            raise ValueError("retention_days must be 7 or 30")
         validated = await run_in_threadpool(
             validate_document_upload,
             filename=filename,
@@ -93,6 +97,8 @@ class DocumentUploadService:
             storage_bucket=stored_object.bucket,
             storage_key=stored_object.key,
             storage_etag=stored_object.etag,
+            retention_days=retention_days,
+            expires_at=datetime.now(UTC) + timedelta(days=retention_days),
         )
 
         try:

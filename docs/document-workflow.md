@@ -1,5 +1,29 @@
 # Belge durum zinciri ve mühendislik notları
 
+## Belge saklama süresi
+
+Yükleme formunda 7 veya 30 gün seçilir; varsayılan 7 gündür.
+`POST /api/v1/documents` multipart alanı `retention_days` yalnızca bu iki değeri kabul eder.
+API `retention_days` ve UTC `expires_at` döndürür. Süre yükleme anından başlar;
+analizin başlatılması veya tamamlanması süreyi uzatmaz. Mevcut belgeler migration
+uygulandığı tarihten itibaren 30 gün saklanır.
+
+Celery Beat saatte bir `intihal.cleanup_expired_documents` gönderir. Görev her
+çalışmada en fazla 100 uygun belgeyi işler; sıradaki belgeler sonraki taramaya kalır.
+Devam eden analizler temizlenmez; tamamlanınca veya başarısız olunca sonraki
+taramada temizlenir. Bu nedenle süre dolması ve fiziksel silme aynı an değildir.
+
+Temizlik önce `deleted` durumunu kalıcı kaydeder; ardından MinIO nesnesini,
+eşleşmeleri, analizleri ve chunk'ları siler. Kaynak havuzuna dokunmaz.
+Belge metadata kaydı silinmiş durumda kalır. `cleaned_at` yalnızca tüm adımlar
+başarılı olunca yazılır; eksik temizlikler sonraki taramada yeniden denenir.
+Manuel silmelerde yarım kalan işlemler de bu görevin kapsamındadır.
+
+MinIO ve PostgreSQL ortak transaction kullanmaz. Kalıcı silme niyeti ve
+**idempotency** (aynı işi tekrar çalıştırmanın güvenli olması), iki sistem arasında
+kesinti yaşandığında tutarlılığı yeniden sağlar. Aday belge, temizlenmeden önce
+satır kilidi altında tekrar kontrol edilir; böylece yeni başlatılmış analiz silinmez.
+
 ## Olay örgüsü
 
 `UPLOADED → QUEUED → EXTRACTING → ANALYZING → COMPLETED`

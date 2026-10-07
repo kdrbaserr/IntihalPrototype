@@ -45,6 +45,10 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
             "intihal.healthcheck": {"queue": DEFAULT_QUEUE},
         },
         beat_schedule={
+            "cleanup-expired-documents": {
+                "task": "intihal.cleanup_expired_documents",
+                "schedule": 3600.0,
+            },
             "dispatch-document-workflows": {
                 "task": "intihal.dispatch_pending",
                 "schedule": 15.0,

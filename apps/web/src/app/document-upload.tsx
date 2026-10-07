@@ -85,6 +85,7 @@ export function DocumentUpload({ onSessionExpired }: { onSessionExpired?: () => 
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [retentionDays, setRetentionDays] = useState<7 | 30>(7);
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -117,6 +118,7 @@ export function DocumentUpload({ onSessionExpired }: { onSessionExpired?: () => 
 
     const formData = new FormData();
     formData.append("file", selectedFile);
+    formData.append("retention_days", String(retentionDays));
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}/documents`);
@@ -190,6 +192,14 @@ export function DocumentUpload({ onSessionExpired }: { onSessionExpired?: () => 
       </div>
 
       <div className="upload-panel">
+        <label htmlFor="retention-days">Belge saklama süresi</label>
+        <select id="retention-days" value={retentionDays}
+          disabled={isUploading || uploadState === "success"}
+          onChange={(event) => setRetentionDays(Number(event.target.value) as 7 | 30)}>
+          <option value={7}>7 gün</option>
+          <option value={30}>30 gün</option>
+        </select>
+        <p>Süre yükleme anından başlar. Süresi dolunca belge ve analiz verileri otomatik temizlenir.</p>
         <label className="file-picker" htmlFor="document-file">
           <span className="file-picker-icon" aria-hidden="true">↑</span>
           <strong>{selectedFile ? "Başka dosya seç" : "Bilgisayardan dosya seç"}</strong>
