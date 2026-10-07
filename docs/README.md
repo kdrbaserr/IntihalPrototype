@@ -23,6 +23,15 @@ Burada zamanla şunlar tutulacaktır:
 - çift tıklama koruması, kontrollü manuel retry ve ⭐ notlar (`analysis-retry.md`).
 - başarı, timeout, worker kesintisi ve retry senaryo testleri
   (`worker-resilience-tests.md`).
+- kuyruk, metin çıkarma, analiz ve hata durumlarının kullanıcıya gösterimi
+  (`analysis-status-ui.md`).
+- eşleşme aralıkları, kaynak/sayfa bilgileri ve kalıcı skor bileşenleri
+  (`match-evidence-api.md`).
+- çakışan aralıkların birleştirilmesi ve skor renkleri (`match-highlighting.md`).
+- kaynak/minimum skor filtreleri ve eşleşme ayrıntıları (`match-filters-details.md`).
+- yöntem, tarih, kaynaklar ve uyarı içeren yazdırılabilir görünüm (`printable-report.md`).
+- Playwright ile gerçek tarayıcı yükleme/bekleme/rapor akışı ve kapsam sınırları
+  (`playwright-workflow.md`).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

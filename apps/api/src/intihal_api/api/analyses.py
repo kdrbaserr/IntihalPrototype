@@ -111,6 +111,7 @@ async def get_matches(
                 analysis_id=analysis_id,
                 method=match.method,
                 similarity_score=match.similarity_score,
+                score_components=match.score_components,
                 matched_token_count=match.matched_token_count,
                 explanation=match.explanation,
                 document=EvidenceResponse(
@@ -135,6 +136,7 @@ async def get_matches(
                     ],
                     source_document_id=source.id,
                     title=source.title,
+                    original_filename=source.original_filename,
                     author=source.author,
                     publisher=source.publisher,
                     source_url=source.source_url,

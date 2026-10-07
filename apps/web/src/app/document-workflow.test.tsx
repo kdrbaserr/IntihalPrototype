@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DocumentWorkflow } from "./document-workflow";
@@ -34,6 +34,7 @@ describe("DocumentWorkflow", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Karşılaştırılıyor");
     await act(async () => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByRole("status")).toHaveTextContent("Analiz tamamlandı");
+    expect(screen.getByRole("button", { name: "Eşleşmeleri göster" })).toBeInTheDocument();
     const count = fetcher.mock.calls.length;
     await act(async () => vi.advanceTimersByTimeAsync(10000));
     expect(fetcher.mock.calls.length).toBe(count);
@@ -66,6 +67,7 @@ describe("DocumentWorkflow", () => {
     const fetcher = vi.fn().mockResolvedValueOnce(response("failed", "retry_exhausted"))
       .mockResolvedValueOnce({ ok: false, json: async () => ({ detail: {
         code: "analysis_retry_limit", message: "Bu belge için yeniden deneme sınırına ulaşıldı.",
+        trace_id: "support-trace-id",
       } }) });
     vi.stubGlobal("fetch", fetcher);
     await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" />));
@@ -74,6 +76,7 @@ describe("DocumentWorkflow", () => {
       method: "POST", credentials: "include", headers: { "X-CSRF-Protection": "1" },
     });
     expect(screen.getAllByRole("alert").some((item) => item.textContent?.includes("sınırına"))).toBe(true);
+    expect(screen.getByText("Destek takip kodu: support-trace-id")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Analiz başarısız");
   });
 
@@ -95,5 +98,68 @@ describe("DocumentWorkflow", () => {
     await act(async () => vi.advanceTimersByTimeAsync(5000));
     expect(screen.getByRole("status")).toHaveTextContent("Karşılaştırılıyor");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["queued", "Kuyrukta", "İşlem sırasının"],
+    ["extracting", "Metin çıkarılıyor", "bölümlere ayrılıyor"],
+    ["analyzing", "Karşılaştırılıyor", "izinli kaynaklarla"],
+  ])("explains %s and distinguishes current, finished and pending stages", async (status, label, description) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(status)));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    expect(screen.getByRole("status")).toHaveTextContent(label);
+    expect(screen.getByText(new RegExp(description))).toBeInTheDocument();
+    const items = within(screen.getByRole("list", { name: "Analiz aşamaları" })).getAllByRole("listitem");
+    const current = items.find((item) => item.getAttribute("aria-current") === "step");
+    expect(current).toHaveTextContent(label);
+    expect(current).toHaveTextContent("Şu an");
+    expect(items[0]).toHaveAttribute("data-state", "done");
+    expect(items[4]).toHaveAttribute("data-state", "pending");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows timeout guidance and does not mark later stages completed after failure", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response("extracting"))
+      .mockResolvedValue(response("failed", "processing_timeout"));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(screen.getByRole("alert")).toHaveTextContent("ayrılan süre doldu");
+    expect(screen.getByRole("alert")).toHaveTextContent("Son görülen aşama: Metin çıkarılıyor");
+    const items = within(screen.getByRole("list", { name: "Analiz aşamaları" })).getAllByRole("listitem");
+    expect(items[2]).toHaveAttribute("data-state", "interrupted");
+    expect(items[3]).toHaveAttribute("data-state", "pending");
+    expect(items[4]).toHaveAttribute("data-state", "pending");
+    expect(screen.getByRole("button", { name: "Analizi yeniden dene" })).toBeEnabled();
+  });
+
+  it("shows a safe failure even when no failure code is supplied", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response("failed")));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    expect(screen.getByRole("alert")).toHaveTextContent("Dosyanı kontrol edip yeniden yükle");
+    expect(screen.queryByText(/Son görülen aşama/)).not.toBeInTheDocument();
+  });
+
+  it("does not offer start before the first status response arrives", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise(() => {})));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    expect(screen.getByRole("status")).toHaveTextContent("Durum kontrol ediliyor");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("keeps the last confirmed phase during a connection outage", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response("analyzing"))
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue(response("completed"));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(screen.getByRole("status")).toHaveTextContent("Karşılaştırılıyor");
+    expect(screen.getByRole("alert")).toHaveTextContent("Bağlantı geldiğinde");
+    expect(screen.queryByText("İşlem tamamlanamadı")).not.toBeInTheDocument();
+    await act(async () => vi.advanceTimersByTimeAsync(5000));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const items = within(screen.getByRole("list", { name: "Analiz aşamaları" })).getAllByRole("listitem");
+    expect(items.every((item) => item.getAttribute("data-state") === "done")).toBe(true);
   });
 });

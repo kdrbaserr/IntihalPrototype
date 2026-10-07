@@ -168,11 +168,27 @@ def create_matches(
         left_spans = tuple(WORD_PATTERN.finditer(document_chunk.content))
         left_tokens = tuple(tokenize_words(token.group())[0] for token in left_spans)
         for source_chunk in source_chunks:
-            score = calculate_hybrid_similarity(
+            result = calculate_hybrid_similarity(
                 document_chunk.content, source_chunk.content, settings=settings
-            ).score
+            )
+            score = result.score
             if Decimal(str(score)) < analysis.similarity_threshold:
                 continue
+            components = {
+                "scope": "chunk_pair",
+                "algorithm_version": result.algorithm_version,
+            }
+            for name, raw, weight in (
+                ("word_tfidf", result.word_tfidf_score, result.weights.word_tfidf),
+                ("character_tfidf", result.character_tfidf_score, result.weights.character_tfidf),
+                ("word_overlap", result.word_overlap.score, result.weights.word_overlap),
+            ):
+                value = Decimal(str(raw))
+                components[name] = {
+                    "score": str(value),
+                    "weight": str(weight),
+                    "contribution": str(value * weight),
+                }
             right_spans = tuple(WORD_PATTERN.finditer(source_chunk.content))
             right_tokens = tuple(tokenize_words(token.group())[0] for token in right_spans)
             for block in SequenceMatcher(
@@ -187,6 +203,7 @@ def create_matches(
                         source_chunk_id=source_chunk.id,
                         method=MatchMethod.HYBRID,
                         similarity_score=Decimal(str(score)).quantize(Decimal("0.0001")),
+                        score_components=components,
                         document_match_start=document_chunk.char_start
                         + left_spans[block.a].start(),
                         document_match_end=document_chunk.char_start
