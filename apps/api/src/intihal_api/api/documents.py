@@ -4,16 +4,19 @@ from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, ConfigDict, field_validator
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from intihal_api.api.analysis_schemas import AnalysisResponse
 from intihal_api.api.dependencies import CurrentUser, DatabaseSession, ObjectStorage
-from intihal_api.api.document_access import owned_document
+from intihal_api.api.document_access import (
+    owned_analyses_statement,
+    owned_document,
+    owned_documents_statement,
+)
 from intihal_api.core.config import get_settings
 from intihal_api.core.errors import safe_failure_code
-from intihal_api.db.models import Document, DocumentStatus
-from intihal_api.jobs.workflow import latest_analysis, queue_document
+from intihal_api.db.models import Analysis, Document, DocumentStatus
+from intihal_api.jobs.workflow import queue_document
 from intihal_api.storage import StorageError
 from intihal_api.uploads import (
     DocumentUploadService,
@@ -96,11 +99,7 @@ async def list_documents(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Document]:
     documents = await session.scalars(
-        select(Document)
-        .where(
-            Document.owner_id == current_user.id,
-            Document.status != DocumentStatus.DELETED,
-        )
+        owned_documents_statement(current_user)
         .order_by(Document.created_at.desc(), Document.id.desc())
         .offset(offset)
         .limit(limit)
@@ -113,7 +112,12 @@ async def get_document(
     document_id: UUID, current_user: CurrentUser, session: DatabaseSession
 ) -> DocumentResponse:
     document = await owned_document(document_id, current_user, session)
-    latest = await latest_analysis(session, document_id)
+    latest = await session.scalar(
+        owned_analyses_statement(current_user)
+        .where(Analysis.document_id == document_id)
+        .order_by(Analysis.created_at.desc(), Analysis.id.desc())
+        .limit(1)
+    )
     return DocumentResponse.model_validate(document).model_copy(
         update={"latest_analysis_id": latest.id if latest else None}
     )
