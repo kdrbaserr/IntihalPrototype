@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    session_ttl_seconds: int = Field(default=28800, ge=60, le=604800)
+    demo_password: SecretStr | None = None
     demo_user_id: UUID = UUID("11111111-1111-1111-1111-111111111111")
     database_url: str = (
         "postgresql+asyncpg://intihal_app:local-postgres-change-me@localhost:5432/intihal"
@@ -57,6 +59,24 @@ class Settings(BaseSettings):
         env_prefix="INTIHAL_",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def validate_auth_origins(self) -> "Settings":
+        if not self.cors_origins or any(origin == "*" for origin in self.cors_origins):
+            raise ValueError("Cookie authentication requires explicit CORS origins")
+        if self.environment in {"staging", "production"} and any(
+            not origin.startswith("https://") for origin in self.cors_origins
+        ):
+            raise ValueError("staging/production authentication requires HTTPS origins")
+        return self
+
+    @property
+    def session_cookie_secure(self) -> bool:
+        return self.environment in {"staging", "production"}
+
+    @property
+    def session_cookie_name(self) -> str:
+        return "__Host-intihal_session" if self.session_cookie_secure else "intihal_session"
 
     @model_validator(mode="after")
     def validate_similarity_weights(self) -> "Settings":

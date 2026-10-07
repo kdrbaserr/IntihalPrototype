@@ -6,8 +6,6 @@ import { DocumentWorkflow } from "./document-workflow";
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
-const DEMO_USER_ID =
-  process.env.NEXT_PUBLIC_DEMO_USER_ID ?? "11111111-1111-1111-1111-111111111111";
 
 const ALLOWED_TYPES = new Map([
   ["pdf", "application/pdf"],
@@ -80,13 +78,14 @@ export function responseErrorMessage(xhr: XMLHttpRequest): string {
   return "Dosya yüklenemedi. Lütfen yeniden deneyin.";
 }
 
-export function DocumentUpload() {
+export function DocumentUpload({ onSessionExpired }: { onSessionExpired?: () => void } = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [retentionDays, setRetentionDays] = useState<7 | 30>(7);
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -119,10 +118,12 @@ export function DocumentUpload() {
 
     const formData = new FormData();
     formData.append("file", selectedFile);
+    formData.append("retention_days", String(retentionDays));
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}/documents`);
-    xhr.setRequestHeader("X-User-ID", DEMO_USER_ID);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("X-CSRF-Protection", "1");
 
     setUploadState("uploading");
     setProgress(0);
@@ -135,6 +136,7 @@ export function DocumentUpload() {
     };
 
     xhr.onload = () => {
+      if (xhr.status === 401 && onSessionExpired) { onSessionExpired(); return; }
       if (xhr.status >= 200 && xhr.status < 300) {
         setProgress(100);
         setUploadState("success");
@@ -190,6 +192,14 @@ export function DocumentUpload() {
       </div>
 
       <div className="upload-panel">
+        <label htmlFor="retention-days">Belge saklama süresi</label>
+        <select id="retention-days" value={retentionDays}
+          disabled={isUploading || uploadState === "success"}
+          onChange={(event) => setRetentionDays(Number(event.target.value) as 7 | 30)}>
+          <option value={7}>7 gün</option>
+          <option value={30}>30 gün</option>
+        </select>
+        <p>Süre yükleme anından başlar. Süresi dolunca belge ve analiz verileri otomatik temizlenir.</p>
         <label className="file-picker" htmlFor="document-file">
           <span className="file-picker-icon" aria-hidden="true">↑</span>
           <strong>{selectedFile ? "Başka dosya seç" : "Bilgisayardan dosya seç"}</strong>
@@ -248,7 +258,7 @@ export function DocumentUpload() {
           {isUploading ? "Yükleniyor…" : uploadState === "success" ? "Yükleme tamamlandı" : "Belgeyi yükle"}
         </button>
         {documentId && <DocumentWorkflow key={documentId} documentId={documentId}
-          apiBaseUrl={API_BASE_URL} userId={DEMO_USER_ID} />}
+          apiBaseUrl={API_BASE_URL} onSessionExpired={onSessionExpired} />}
       </div>
     </section>
   );

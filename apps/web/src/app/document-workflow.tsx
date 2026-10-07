@@ -28,8 +28,8 @@ const FAILURE_MESSAGES: Record<string, string> = {
   stored_document_changed: "Saklanan dosya yüklenen içerikle eşleşmiyor. Dosyanı yeniden yükle.",
 };
 
-export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
-  documentId: string; apiBaseUrl: string; userId: string;
+export function DocumentWorkflow({ documentId, apiBaseUrl, onSessionExpired }: {
+  documentId: string; apiBaseUrl: string; onSessionExpired?: () => void;
 }) {
   const [status, setStatus] = useState<DocumentStatus>("uploaded");
   const [failure, setFailure] = useState<string | null>(null);
@@ -50,8 +50,13 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
     async function poll() {
       try {
         const response = await fetch(`${apiBaseUrl}/documents/${documentId}`, {
-          headers: { "X-User-ID": userId }, signal: controller.signal,
+          credentials: "include", signal: controller.signal,
         });
+        if (response.status === 401) {
+          onSessionExpired?.();
+          setError("Oturumunuz sona erdi. Yeniden giriş yapın.");
+          return;
+        }
         if (!response.ok) throw new Error("status request failed");
         const document = await response.json();
         if (![...STEPS, "failed"].includes(document.status)) throw new Error("unknown status");
@@ -76,7 +81,7 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
     }
     void poll();
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [documentId, apiBaseUrl, userId, refresh]);
+  }, [documentId, apiBaseUrl, refresh, onSessionExpired]);
 
   async function start() {
     if (submitting.current) return;
@@ -90,8 +95,13 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, userId }: {
         ? `/analyses/${analysisId}/retry`
         : `/documents/${documentId}/analysis`;
       const response = await fetch(`${apiBaseUrl}${path}`, {
-        method: "POST", headers: { "X-User-ID": userId },
+        method: "POST", credentials: "include", headers: { "X-CSRF-Protection": "1" },
       });
+      if (response.status === 401) {
+        onSessionExpired?.();
+        setError("Oturumunuz sona erdi. Yeniden giriş yapın.");
+        return;
+      }
       const result = await response.json();
       if (!response.ok) {
         setError(result.detail?.message ?? "Analiz başlatılamadı. Yeniden deneyebilirsin.");

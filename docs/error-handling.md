@@ -36,10 +36,11 @@ tarih/seviye önekini ekleyebilir.
   `attempt`; olay adı `workflow_stage_error`.
 - Worker dış hatası: `worker_unhandled_error`, task/stage ve varsa belge kimliği.
 - Yükleme sonrası dosya temizliği hatası: `document_cleanup_failed` veya
-  `source_cleanup_failed`, depolama anahtarı.
+  `source_cleanup_failed`; depolama anahtarı `[REDACTED]` olarak maskelenir.
 
 `trace`, istisna türünü ve çağrı yığınının tüm dosya/satır/fonksiyon konumlarını
-tutar; neden zincirindeki istisnalar da kaydedilir. Ham istisna mesajı, SQL,
+tutar; dosya alanı yalnız basename içerir, mutlak dizin yolunu içermez.
+Neden zincirindeki istisnalar da kaydedilir. Ham istisna mesajı, SQL,
 parametreler, yerel değişkenler, belge metni, istek gövdesi ve query değerleri
 kaydedilmez. Bu nedenle trace bir traceback konum kaydıdır; ham Python hata
 metninin kopyası değildir. Celery'ye iletilen dış hata da güvenli mesaj ve takip

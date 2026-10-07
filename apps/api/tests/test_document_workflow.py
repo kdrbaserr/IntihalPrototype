@@ -10,6 +10,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from auth_helpers import session_headers
 from intihal_api.core.config import Settings
 from intihal_api.db.base import Base
 from intihal_api.db.models import (
@@ -224,8 +225,8 @@ def test_status_and_start_endpoints_enforce_ownership_and_repeat_safety():
                 transport=ASGITransport(app=application), base_url="http://test"
             ) as client:
                 url = f"/api/v1/documents/{document.id}"
-                owner_headers = {"X-User-ID": str(document.owner_id)}
-                other_headers = {"X-User-ID": str(other.id)}
+                owner_headers = await session_headers(session, document.owner_id)
+                other_headers = await session_headers(session, other.id)
                 assert (await client.get(url, headers=other_headers)).status_code == 404
                 assert (
                     await client.post(url + "/analysis", headers=other_headers)

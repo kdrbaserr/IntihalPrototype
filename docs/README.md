@@ -35,3 +35,9 @@ Burada zamanla şunlar tutulacaktır:
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.
+
+## Giriş ve roller
+
+Parola hashleme, cookie oturumu, user/admin rolleri ve admin oluşturma komutu için
+[kimlik doğrulama ve mimari notlarını](authentication.md) okuyun. Normal hesap web ekranından açılır;
+admin sunucu komutuyla atanır. Eski hesaplara parola atanması gerekir.

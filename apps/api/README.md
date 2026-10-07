@@ -156,8 +156,8 @@ kayıtlarına taşır.
 
 ### Admin kaynak API'si
 
-Kaynak havuzu işlemleri yalnızca `role=admin` olan aktif kullanıcılara açıktır. Yerel
-geliştirme ortamındaki demo kullanıcı seed işlemiyle admin yapılır. Endpointler:
+Kaynak havuzu işlemleri yalnızca `role=admin` olan aktif kullanıcılara açıktır. Admin rolü
+`python -m intihal_api.db.manage_user` komutuyla verilir. Endpointler:
 
 | Yöntem ve yol | Amaç |
 | --- | --- |
@@ -317,3 +317,9 @@ Geri alma sonrasında şemayı tekrar kurmak için yeniden `alembic upgrade head
 
 API hata sözleşmesi, worker trace kayıtları ve ⭐ mühendislik notları:
 [Güvenli hata ve log yönetimi](../../docs/error-handling.md).
+
+## Giriş ve roller
+
+Parola hashleme, cookie oturumu, user/admin rolleri ve admin oluşturma komutu için
+[kimlik doğrulama ve mimari notlarını](../../docs/authentication.md) okuyun. Normal hesap web ekranından açılır;
+admin sunucu komutuyla atanır. Eski hesaplara parola atanması gerekir.

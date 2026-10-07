@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import enum
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
@@ -18,10 +18,11 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from intihal_api.db.base import BaseModel
+from intihal_api.db.base import Base, BaseModel
 
 
 class UserStatus(enum.StrEnum):
@@ -109,9 +110,25 @@ class User(BaseModel):
         nullable=False,
     )
 
+    password_hash: Mapped[str | None] = mapped_column(String(255))
+
     documents: Mapped[list[Document]] = relationship(
         back_populates="owner",
         passive_deletes=True,
+    )
+
+
+class UserSession(BaseModel):
+    """Only the digest of a random browser credential is persisted."""
+
+    __tablename__ = "user_sessions"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
     )
 
 
@@ -121,6 +138,7 @@ class Document(BaseModel):
         CheckConstraint("size_bytes >= 0", name="size_bytes_non_negative"),
         UniqueConstraint("storage_bucket", "storage_key", name="uq_documents_storage_location"),
         Index("ix_documents_owner_id_status", "owner_id", "status"),
+        CheckConstraint("retention_days IN (7, 30)", name="retention_days_valid"),
     )
 
     owner_id: Mapped[UUID] = mapped_column(
@@ -148,6 +166,14 @@ class Document(BaseModel):
     failure_reason: Mapped[str | None] = mapped_column(Text)
     processing_attempts: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retention_days: Mapped[int] = mapped_column(default=7, server_default="7", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC) + timedelta(days=7),
+        nullable=False,
+        index=True,
+    )
+    cleaned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     owner: Mapped[User] = relationship(back_populates="documents")
     chunks: Mapped[list[DocumentChunk]] = relationship(
@@ -406,3 +432,50 @@ class Match(BaseModel):
     analysis: Mapped[Analysis] = relationship(back_populates="matches")
     document_chunk: Mapped[DocumentChunk] = relationship(back_populates="matches")
     source_chunk: Mapped[SourceChunk] = relationship(back_populates="matches")
+
+
+class AuthenticationThrottle(Base):
+    """Shared fixed-window limits across API processes, without storing raw identities."""
+
+    __tablename__ = "authentication_throttles"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    attempts: Mapped[int] = mapped_column(nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+
+
+class AuditEvent(Base):
+    """Minimal event history: no payload, credentials, filenames or free-form metadata."""
+
+    __tablename__ = "audit_events"
+    __table_args__ = (
+        CheckConstraint("actor_kind IN ('user', 'system', 'operator')", name="actor_kind_valid"),
+        CheckConstraint("outcome IN ('started', 'succeeded', 'failed')", name="outcome_valid"),
+        CheckConstraint(
+            "resource_type IN ('document', 'source', 'user')", name="resource_type_valid"
+        ),
+        CheckConstraint(
+            "action IN ('document.upload', 'document.delete', 'admin.source.create', "
+            "'admin.source.list', 'admin.source.disable', 'admin.source.reindex', "
+            "'admin.user.provision')",
+            name="action_valid",
+        ),
+        CheckConstraint(
+            "(actor_kind = 'user' AND actor_id IS NOT NULL) OR "
+            "(actor_kind IN ('system', 'operator') AND actor_id IS NULL)",
+            name="actor_identity_valid",
+        ),
+        Index("ix_audit_events_resource", "resource_type", "resource_id", "created_at"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+    # Deliberately no FK: deleting a resource/account must not erase its audit history.
+    actor_id: Mapped[UUID | None] = mapped_column(index=True)
+    actor_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    resource_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    resource_id: Mapped[UUID | None] = mapped_column()
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)

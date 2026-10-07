@@ -9,6 +9,7 @@ import {
 
 class MockXMLHttpRequest {
   static latest: MockXMLHttpRequest;
+  withCredentials = false;
   status = 0;
   responseText = "";
   upload: { onprogress: ((event: ProgressEvent) => void) | null } = { onprogress: null };
@@ -57,9 +58,11 @@ describe("DocumentUpload", () => {
       "http://localhost:8000/api/v1/documents",
     );
     expect(request.setRequestHeader).toHaveBeenCalledWith(
-      "X-User-ID",
-      "11111111-1111-1111-1111-111111111111",
+      "X-CSRF-Protection",
+      "1",
     );
+
+    expect(request.withCredentials).toBe(true);
 
     act(() => {
       request.upload.onprogress?.(
@@ -72,6 +75,30 @@ describe("DocumentUpload", () => {
     act(() => request.onload?.());
     expect(screen.getByText(/güvenli biçimde yüklendi/i)).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toHaveValue(100);
+  });
+
+  it("returns to login when the upload session expires", () => {
+    const expired = vi.fn();
+    render(<DocumentUpload onSessionExpired={expired} />);
+    fireEvent.change(screen.getByLabelText(/bilgisayardan dosya seç/i), {
+      target: { files: [new File(["text"], "test.txt", { type: "text/plain" })] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /belgeyi yükle/i }));
+    MockXMLHttpRequest.latest.status = 401;
+    act(() => MockXMLHttpRequest.latest.onload?.());
+    expect(expired).toHaveBeenCalledOnce();
+  });
+
+  it.each(["7", "30"])("sends the selected %s day retention window", (days) => {
+    render(<DocumentUpload />);
+    fireEvent.change(screen.getByLabelText("Belge saklama süresi"), { target: { value: days } });
+    fireEvent.change(screen.getByLabelText(/bilgisayardan dosya seç/i), {
+      target: { files: [new File(["text"], "test.txt", { type: "text/plain" })] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /belgeyi yükle/i }));
+    const body = MockXMLHttpRequest.latest.send.mock.calls[0][0] as FormData;
+    expect(body.get("retention_days")).toBe(days);
+    expect(screen.getByLabelText("Belge saklama süresi")).toBeDisabled();
   });
 
   it.each([

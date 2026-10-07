@@ -15,6 +15,7 @@ from sqlalchemy.pool import NullPool
 from intihal_api.core.config import get_settings
 from intihal_api.core.diagnostics import log_error
 from intihal_api.db.models import AnalysisStatus, Document, DocumentStatus
+from intihal_api.documents.retention import cleanup_expired_documents
 from intihal_api.jobs.app import TransientJobError
 from intihal_api.jobs.states import transition_document
 from intihal_api.jobs.workflow import analyze_document, extract_document, latest_analysis
@@ -172,6 +173,16 @@ async def dispatch_pending(publish: Callable[[str, str], Any]) -> int:
                 )
                 publish(name, str(identifier))
             return len(pending)
+    finally:
+        await engine.dispose()
+
+
+async def run_retention_cleanup() -> int:
+    settings = get_settings()
+    engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    try:
+        async with AsyncSession(engine, expire_on_commit=False) as session:
+            return await cleanup_expired_documents(session, create_object_storage_service(settings))
     finally:
         await engine.dispose()
 

@@ -7,6 +7,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
+from auth_helpers import session_headers
 from intihal_api.core.config import Settings
 from intihal_api.db.models import Analysis, DocumentChunk, DocumentStatus, Match, SourceChunk, User
 from intihal_api.db.session import get_db_session
@@ -36,8 +37,8 @@ async def api():
                 client,
                 session,
                 document,
-                {"X-User-ID": str(document.owner_id)},
-                {"X-User-ID": str(other.id)},
+                await session_headers(session, document.owner_id),
+                await session_headers(session, other.id),
             )
 
 

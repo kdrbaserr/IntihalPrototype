@@ -1,10 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import HomePage from "./page";
 
 describe("HomePage", () => {
   it("presents the document similarity workflow", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
     render(<HomePage />);
 
     expect(
@@ -15,6 +16,6 @@ describe("HomePage", () => {
       "href",
       "#belge-yukle",
     );
-    expect(screen.getByLabelText(/bilgisayardan dosya seç/i)).toBeInTheDocument();
+    expect(screen.getByText(/oturum kontrol ediliyor/i)).toBeInTheDocument();
   });
 });

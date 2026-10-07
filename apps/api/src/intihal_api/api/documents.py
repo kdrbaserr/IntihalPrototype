@@ -1,19 +1,39 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
-from pydantic import BaseModel, ConfigDict, field_validator
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
+from pydantic import BaseModel, BeforeValidator, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from intihal_api.api.analysis_schemas import AnalysisResponse
-from intihal_api.api.dependencies import CurrentUser, DatabaseSession, ObjectStorage
-from intihal_api.api.document_access import owned_document
+from intihal_api.api.dependencies import (
+    CurrentUser,
+    DatabaseSession,
+    ObjectStorage,
+    require_upload_rate,
+)
+from intihal_api.api.document_access import (
+    owned_analyses_statement,
+    owned_document,
+    owned_documents_statement,
+)
 from intihal_api.core.config import get_settings
 from intihal_api.core.errors import safe_failure_code
-from intihal_api.db.models import Document, DocumentStatus
-from intihal_api.jobs.workflow import latest_analysis, queue_document
+from intihal_api.db.models import Analysis, Document, DocumentStatus
+from intihal_api.documents.cleanup import DocumentCleanupError, cleanup_document
+from intihal_api.jobs.workflow import queue_document
 from intihal_api.storage import StorageError
 from intihal_api.uploads import (
     DocumentUploadService,
@@ -36,6 +56,8 @@ class DocumentResponse(BaseModel):
     status: DocumentStatus
     created_at: datetime
     updated_at: datetime
+    retention_days: int
+    expires_at: datetime
     failure_reason: str | None = None
     latest_analysis_id: UUID | None = None
 
@@ -45,12 +67,18 @@ class DocumentResponse(BaseModel):
         return safe_failure_code(value)
 
 
-@router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=DocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_upload_rate)],
+)
 async def create_document(
     file: Annotated[UploadFile, File(description="PDF, DOCX veya TXT; en fazla 20 MB")],
     current_user: CurrentUser,
     session: DatabaseSession,
     storage: ObjectStorage,
+    retention_days: Annotated[Literal[7, 30], BeforeValidator(int), Form()] = 7,
 ) -> Document:
     service = DocumentUploadService(storage)
     try:
@@ -60,6 +88,7 @@ async def create_document(
             content_type=file.content_type,
             stream=file.file,
             session=session,
+            retention_days=retention_days,
         )
     except UploadValidationError as error:
         raise HTTPException(
@@ -96,11 +125,7 @@ async def list_documents(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Document]:
     documents = await session.scalars(
-        select(Document)
-        .where(
-            Document.owner_id == current_user.id,
-            Document.status != DocumentStatus.DELETED,
-        )
+        owned_documents_statement(current_user)
         .order_by(Document.created_at.desc(), Document.id.desc())
         .offset(offset)
         .limit(limit)
@@ -113,7 +138,12 @@ async def get_document(
     document_id: UUID, current_user: CurrentUser, session: DatabaseSession
 ) -> DocumentResponse:
     document = await owned_document(document_id, current_user, session)
-    latest = await latest_analysis(session, document_id)
+    latest = await session.scalar(
+        owned_analyses_statement(current_user)
+        .where(Analysis.document_id == document_id)
+        .order_by(Analysis.created_at.desc(), Analysis.id.desc())
+        .limit(1)
+    )
     return DocumentResponse.model_validate(document).model_copy(
         update={"latest_analysis_id": latest.id if latest else None}
     )
@@ -126,3 +156,35 @@ async def start_analysis(document_id: UUID, current_user: CurrentUser, session: 
         return await queue_document(document, session, get_settings())
     except ValueError as error:
         raise HTTPException(status_code=409, detail={"code": "analysis_not_available"}) from error
+
+
+@router.delete("/{document_id}", status_code=204)
+async def delete_document(
+    document_id: UUID,
+    current_user: CurrentUser,
+    session: DatabaseSession,
+    storage: ObjectStorage,
+    response: Response,
+) -> None:
+    # Unlike read endpoints, deletion can find its owner's tombstone to resume cleanup.
+    document = await session.scalar(
+        select(Document)
+        .where(
+            Document.id == document_id,
+            Document.owner_id == current_user.id,
+        )
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if document is None:
+        raise HTTPException(404, detail={"code": "document_not_found"})
+    try:
+        await cleanup_document(document, session, storage, actor_id=current_user.id)
+    except DocumentCleanupError as error:
+        raise HTTPException(409, detail={"code": error.code}) from error
+    except StorageError as error:
+        raise HTTPException(503, detail={"code": "document_cleanup_pending"}) from error
+    except IntegrityError as error:
+        await session.rollback()
+        raise HTTPException(409, detail={"code": "document_cleanup_conflict"}) from error
+    response.headers["Cache-Control"] = "no-store"

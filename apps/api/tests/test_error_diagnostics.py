@@ -128,12 +128,13 @@ def test_worker_logs_original_trace_but_raises_safe_exception(caplog, transient)
         raise ValueError(SECRET)
 
     expected = TransientJobError if transient else RuntimeError
+    task_id, document_id = str(uuid4()), str(uuid4())
     with pytest.raises(expected) as caught:
-        run_async(failing_operation(), task_id="task-123", stage="extract", document_id="doc-123")
+        run_async(failing_operation(), task_id=task_id, stage="extract", document_id=document_id)
     record = diagnostic_records(caplog)[0]
-    assert record["task_id"] == "task-123"
+    assert record["task_id"] == task_id
     assert record["stage"] == "extract"
-    assert record["document_id"] == "doc-123"
+    assert record["document_id"] == document_id
     assert record["trace_id"] in str(caught.value)
     assert any(f["function"] == "failing_operation" for f in record["trace"][0]["frames"])
     assert SECRET not in caplog.text

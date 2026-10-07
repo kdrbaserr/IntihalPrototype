@@ -19,7 +19,7 @@ gelen eşzamanlı istekleri de korur.
 
 ## Manuel retry sözleşmesi
 
-`POST /api/v1/analyses/{analysis_id}/retry` body gerektirmez; `X-User-ID` gerekir.
+`POST /api/v1/analyses/{analysis_id}/retry` body gerektirmez; oturum cookie'si ve `X-CSRF-Protection: 1` gerekir. [Giriş örneği](authentication.md).
 Başarılı cevap 202 ve `Location` header'ıyla takip edilecek analizi döndürür.
 
 1. Analiz ve belge sahipliği kontrol edilir; başkasının analizi 404 döner.

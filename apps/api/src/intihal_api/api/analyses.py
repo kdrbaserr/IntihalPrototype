@@ -2,8 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Response
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func
 
 from intihal_api.api.analysis_schemas import (
     AnalysisCreate,
@@ -15,41 +14,16 @@ from intihal_api.api.analysis_schemas import (
     SourceEvidenceResponse,
 )
 from intihal_api.api.dependencies import CurrentUser, DatabaseSession
-from intihal_api.api.document_access import owned_document
+from intihal_api.api.document_access import owned_analysis, owned_document, owned_matches_statement
 from intihal_api.core.config import get_settings
 from intihal_api.db.models import (
     Analysis,
     AnalysisStatus,
-    Document,
-    DocumentChunk,
-    DocumentStatus,
     Match,
-    SourceChunk,
-    SourceDocument,
-    User,
 )
 from intihal_api.jobs.workflow import AnalysisRetryError, queue_document, retry_document
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
-
-
-async def owned_analysis(
-    analysis_id: UUID, user: User, session: AsyncSession
-) -> tuple[Analysis, Document]:
-    row = (
-        await session.execute(
-            select(Analysis, Document)
-            .join(Document, Analysis.document_id == Document.id)
-            .where(
-                Analysis.id == analysis_id,
-                Document.owner_id == user.id,
-                Document.status != DocumentStatus.DELETED,
-            )
-        )
-    ).first()
-    if row is None:
-        raise HTTPException(status_code=404, detail={"code": "analysis_not_found"})
-    return row.Analysis, row.Document
 
 
 @router.post("", response_model=AnalysisResponse, status_code=202)
@@ -118,17 +92,13 @@ async def get_matches(
                 "message": "Eşleşmeler yalnız tamamlanmış analizlerde okunabilir.",
             },
         )
-    total = await session.scalar(
-        select(func.count(Match.id)).where(Match.analysis_id == analysis_id)
-    )
+    # Apply ownership to both the count and evidence query, even after the
+    # parent access check. Pagination must never count or expose foreign data.
+    statement = owned_matches_statement(current_user).where(Match.analysis_id == analysis_id)
+    total = await session.scalar(statement.with_only_columns(func.count(Match.id)))
     rows = (
         await session.execute(
-            select(Match, DocumentChunk, SourceChunk, SourceDocument)
-            .join(DocumentChunk, Match.document_chunk_id == DocumentChunk.id)
-            .join(SourceChunk, Match.source_chunk_id == SourceChunk.id)
-            .join(SourceDocument, SourceChunk.source_document_id == SourceDocument.id)
-            .where(Match.analysis_id == analysis_id)
-            .order_by(Match.similarity_score.desc(), Match.document_match_start, Match.id)
+            statement.order_by(Match.similarity_score.desc(), Match.document_match_start, Match.id)
             .offset(offset)
             .limit(limit)
         )

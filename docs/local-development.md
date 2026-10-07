@@ -98,3 +98,9 @@ reload yapmaz; `docker compose restart worker` gerekir.
 - Bir port kullanımda hatası alırsan `.env` içindeki ilgili dış portu değiştir.
 - Bir servis sağlıksız görünürse `docker compose logs servis-adi` ile logunu incele.
 - Ayarların Compose'a nasıl işlendiğini görmek için `docker compose config` çalıştır.
+
+## Giriş ve roller
+
+Parola hashleme, cookie oturumu, user/admin rolleri ve admin oluşturma komutu için
+[kimlik doğrulama ve mimari notlarını](authentication.md) okuyun. Normal hesap web ekranından açılır;
+admin sunucu komutuyla atanır. Eski hesaplara parola atanması gerekir.

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hmac
 from typing import BinaryIO, Protocol
+from uuid import UUID
 
 from sqlalchemy import delete
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.core.audit import AuditAction, AuditOutcome, record_audit
 from intihal_api.db.models import SourceChunk, SourceDocument, SourceDocumentStatus
 from intihal_api.extraction import ChunkedText, extract_and_chunk_document
 from intihal_api.uploads import calculate_sha256
@@ -51,7 +53,12 @@ class SourceDocumentProcessingService:
         source_document: SourceDocument,
         stream: BinaryIO,
         session: SourceProcessingSession,
+        actor_id: UUID | None = None,
+        audit_action: AuditAction = AuditAction.SOURCE_REINDEX,
     ) -> ChunkedText:
+        source_id = source_document.id
+        if audit_action not in (AuditAction.SOURCE_CREATE, AuditAction.SOURCE_REINDEX):
+            raise ValueError("Unsupported source audit action")
         document_format = _document_format_for(source_document.content_type)
         checksum, size_bytes = await run_in_threadpool(calculate_sha256, stream)
         if not hmac.compare_digest(checksum, source_document.sha256) or (
@@ -60,6 +67,14 @@ class SourceDocumentProcessingService:
             raise SourceChecksumMismatchError
 
         source_document.status = SourceDocumentStatus.PROCESSING
+        if actor_id is not None and audit_action is AuditAction.SOURCE_REINDEX:
+            record_audit(
+                session,
+                action=audit_action,
+                actor_id=actor_id,
+                resource_id=source_id,
+                outcome=AuditOutcome.STARTED,
+            )
         await session.commit()
 
         try:
@@ -70,6 +85,14 @@ class SourceDocumentProcessingService:
             )
         except Exception:
             source_document.status = SourceDocumentStatus.FAILED
+            if actor_id is not None:
+                record_audit(
+                    session,
+                    action=audit_action,
+                    actor_id=actor_id,
+                    resource_id=source_id,
+                    outcome=AuditOutcome.FAILED,
+                )
             await session.commit()
             raise
 
@@ -92,11 +115,26 @@ class SourceDocumentProcessingService:
             )
             session.add_all(chunks)
             source_document.status = SourceDocumentStatus.READY
+            if actor_id is not None:
+                record_audit(
+                    session,
+                    action=audit_action,
+                    actor_id=actor_id,
+                    resource_id=source_id,
+                )
             await session.commit()
         except Exception:
             await session.rollback()
             source_document.status = SourceDocumentStatus.FAILED
             try:
+                if actor_id is not None:
+                    record_audit(
+                        session,
+                        action=audit_action,
+                        actor_id=actor_id,
+                        resource_id=source_id,
+                        outcome=AuditOutcome.FAILED,
+                    )
                 await session.commit()
             except Exception:
                 await session.rollback()

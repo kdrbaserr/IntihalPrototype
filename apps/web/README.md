@@ -44,3 +44,9 @@ sunucusu dosya değişikliklerini algılayıp tarayıcıyı yeniler.
 - `src/app/layout.tsx`: bütün sayfaların ortak HTML iskeleti, üst menü ve alt bilgi.
 - `src/app/page.tsx`: `/` adresinde gösterilen ana sayfa.
 - `src/app/globals.css`: uygulamanın ortak tasarım değişkenleri ve responsive stilleri.
+
+## Giriş ve roller
+
+Parola hashleme, cookie oturumu, user/admin rolleri ve admin oluşturma komutu için
+[kimlik doğrulama ve mimari notlarını](../../docs/authentication.md) okuyun. Normal hesap web ekranından açılır;
+admin sunucu komutuyla atanır. Eski hesaplara parola atanması gerekir.

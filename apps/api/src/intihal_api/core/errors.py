@@ -1,9 +1,23 @@
 PUBLIC_MESSAGES = {
+    "upload_rate_limited": "Çok fazla yükleme denemesi. Birkaç dakika sonra yeniden deneyin.",
+    "request_too_large": "Yükleme isteği boyut sınırını aşıyor. En fazla 20 MB dosya gönderin.",
+    "document_processing": "Belge işleniyor. Analiz tamamlandıktan sonra silmeyi yeniden deneyin.",
+    "document_storage_mismatch": "Belgenin depolama kaydı doğrulanamadı; silme yapılmadı.",
+    "document_cleanup_pending": (
+        "Belge erişimden kaldırıldı; dosya temizlenemedi. Silme isteğini yeniden deneyin."
+    ),
+    "document_cleanup_conflict": (
+        "Belge gizlendi; ilişkili kayıtlar temizlenemedi. Takip koduyla destek isteyin."
+    ),
+    "invalid_credentials": "E-posta veya parola hatalı.",
+    "registration_conflict": "Bu adresle kayıt oluşturulamıyor.",
+    "csrf_rejected": "İstek kaynağı doğrulanamadı.",
+    "auth_rate_limited": "Çok fazla deneme. Birkaç dakika sonra yeniden deneyin.",
     "analysis_retry_not_allowed": "Bu hata için dosyayı düzeltip yeniden yükleyin.",
     "analysis_retry_conflict": "Yalnız son başarısız analiz yeniden denenebilir.",
     "analysis_retry_limit": "Bu belge için yeniden deneme sınırına ulaşıldı.",
     "internal_error": "İşlem tamamlanamadı. Takip koduyla destek isteyebilirsiniz.",
-    "authentication_required": "Geçerli bir kullanıcı kimliği gerekli.",
+    "authentication_required": "Giriş yapmanız gerekli.",
     "user_disabled": "Kullanıcı hesabı devre dışı.",
     "admin_required": "Bu işlem için yönetici yetkisi gerekli.",
     "not_found": "Kayıt bulunamadı.",

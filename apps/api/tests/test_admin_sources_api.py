@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from auth_helpers import session_headers
 from intihal_api.db.models import SourceChunk, SourceDocument, User, UserRole
 from intihal_api.db.session import get_db_session
 from intihal_api.main import create_app
@@ -141,20 +142,22 @@ async def test_admin_can_add_list_reindex_and_disable_source(
                 ]
             )
             await session.commit()
+            admin_headers = await session_headers(session, ADMIN_ID)
+            user_headers = await session_headers(session, USER_ID)
 
         async with application.router.lifespan_context(application):
             transport = ASGITransport(app=application)
             async with AsyncClient(transport=transport, base_url="http://testserver") as client:
                 forbidden = await client.get(
                     "/api/v1/admin/sources",
-                    headers={"X-User-ID": str(USER_ID)},
+                    headers=user_headers,
                 )
                 assert forbidden.status_code == 403
                 assert forbidden.json()["detail"]["code"] == "admin_required"
 
                 missing_permission = await client.post(
                     "/api/v1/admin/sources",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                     data={
                         "title": "Eksik İzinli Kaynak",
                         "license_name": "CC BY 4.0",
@@ -167,7 +170,7 @@ async def test_admin_can_add_list_reindex_and_disable_source(
 
                 created = await client.post(
                     "/api/v1/admin/sources",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                     data={
                         "title": "Akademik Kaynak",
                         "license_name": "CC BY 4.0",
@@ -191,14 +194,14 @@ async def test_admin_can_add_list_reindex_and_disable_source(
 
                 listed = await client.get(
                     "/api/v1/admin/sources?status=ready&license_status=pending",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                 )
                 assert listed.status_code == 200
                 assert [item["id"] for item in listed.json()] == [source_id]
 
                 reindexed = await client.post(
                     f"/api/v1/admin/sources/{source_id}/reindex",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                 )
                 assert reindexed.status_code == 200, reindexed.text
                 assert reindexed.json()["status"] == "ready"
@@ -207,21 +210,21 @@ async def test_admin_can_add_list_reindex_and_disable_source(
                 minio_client.objects[storage_key] = b"Sonradan degistirilmis kaynak."
                 checksum_conflict = await client.post(
                     f"/api/v1/admin/sources/{source_id}/reindex",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                 )
                 assert checksum_conflict.status_code == 409
                 assert checksum_conflict.json()["detail"]["code"] == "source_checksum_mismatch"
 
                 disabled = await client.post(
                     f"/api/v1/admin/sources/{source_id}/disable",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                 )
                 assert disabled.status_code == 200
                 assert disabled.json()["status"] == "disabled"
 
                 disabled_reindex = await client.post(
                     f"/api/v1/admin/sources/{source_id}/reindex",
-                    headers={"X-User-ID": str(ADMIN_ID)},
+                    headers=admin_headers,
                 )
                 assert disabled_reindex.status_code == 409
                 assert disabled_reindex.json()["detail"]["code"] == "source_disabled"

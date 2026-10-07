@@ -1,5 +1,10 @@
 from intihal_api.jobs.app import app
-from intihal_api.jobs.runtime import dispatch_pending, run_async, run_stage
+from intihal_api.jobs.runtime import dispatch_pending, run_async, run_retention_cleanup, run_stage
+
+
+@app.task(name="intihal.cleanup_expired_documents")
+def cleanup_expired() -> int:
+    return run_async(run_retention_cleanup(), stage="retention_cleanup")
 
 
 @app.task(name="intihal.healthcheck")

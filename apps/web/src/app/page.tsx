@@ -1,4 +1,4 @@
-import { DocumentUpload } from "./document-upload";
+import { AuthPanel } from "./auth-panel";
 
 const steps = [
   {
@@ -41,7 +41,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <DocumentUpload />
+      <AuthPanel />
 
       <section className="workflow" id="nasil-calisir" aria-labelledby="workflow-title">
         <div className="section-heading">

@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import BinaryIO, Protocol
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.core.audit import AuditAction, AuditOutcome, record_audit
 from intihal_api.core.diagnostics import log_error
 from intihal_api.corpus.service import SourceDocumentProcessingService, SourceProcessingSession
 from intihal_api.db.models import LicenseStatus, SourceDocument, SourceDocumentStatus
@@ -65,6 +66,7 @@ class SourceDocumentIngestionService:
         content_type: str | None,
         stream: BinaryIO,
         session: SourceIngestionSession,
+        actor_id: UUID | None = None,
     ) -> SourceDocument:
         normalized_metadata = _normalize_metadata(metadata)
         validated = await run_in_threadpool(
@@ -112,6 +114,14 @@ class SourceDocumentIngestionService:
 
         try:
             session.add(source)
+            if actor_id is not None:
+                record_audit(
+                    session,
+                    action=AuditAction.SOURCE_CREATE,
+                    actor_id=actor_id,
+                    resource_id=source_id,
+                    outcome=AuditOutcome.STARTED,
+                )
             await session.commit()
         except Exception:
             await session.rollback()
@@ -122,6 +132,8 @@ class SourceDocumentIngestionService:
             source_document=source,
             stream=stream,
             session=session,
+            actor_id=actor_id,
+            audit_action=AuditAction.SOURCE_CREATE,
         )
         return source
 

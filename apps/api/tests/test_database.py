@@ -54,6 +54,7 @@ def test_user_model_has_identity_and_status_fields() -> None:
         "display_name",
         "status",
         "role",
+        "password_hash",
         "created_at",
         "updated_at",
     }
@@ -84,6 +85,9 @@ def test_document_model_tracks_owner_lifecycle_and_storage() -> None:
         "failure_reason",
         "processing_attempts",
         "next_attempt_at",
+        "retention_days",
+        "expires_at",
+        "cleaned_at",
         "created_at",
         "updated_at",
     }

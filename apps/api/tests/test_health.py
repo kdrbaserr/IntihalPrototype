@@ -42,7 +42,7 @@ def test_local_web_origin_may_upload_documents() -> None:
                 headers={
                     "Origin": "http://localhost:3000",
                     "Access-Control-Request-Method": "POST",
-                    "Access-Control-Request-Headers": "content-type,x-user-id",
+                    "Access-Control-Request-Headers": "content-type,x-csrf-protection",
                 },
             )
 
@@ -50,4 +50,5 @@ def test_local_web_origin_may_upload_documents() -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
-    assert "X-User-ID" in response.headers["access-control-allow-headers"]
+    assert response.headers["access-control-allow-credentials"] == "true"
+    assert "X-CSRF-Protection" in response.headers["access-control-allow-headers"]

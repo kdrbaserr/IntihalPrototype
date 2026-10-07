@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unicodedata
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from io import SEEK_SET
 from pathlib import PurePath
@@ -9,6 +10,7 @@ from uuid import UUID, uuid4
 
 from starlette.concurrency import run_in_threadpool
 
+from intihal_api.core.audit import AuditAction, record_audit
 from intihal_api.core.diagnostics import log_error
 from intihal_api.db.models import Document, DocumentStatus
 from intihal_api.storage import StorageError, StoredObject, build_document_storage_key
@@ -20,6 +22,8 @@ MAX_ORIGINAL_FILENAME_LENGTH = 255
 
 class DocumentSession(Protocol):
     def add(self, instance: object) -> None: ...
+
+    def add_all(self, instances: list[object]) -> None: ...
 
     async def commit(self) -> None: ...
 
@@ -61,7 +65,10 @@ class DocumentUploadService:
         content_type: str | None,
         stream: BinaryIO,
         session: DocumentSession,
+        retention_days: int = 7,
     ) -> Document:
+        if retention_days not in (7, 30):
+            raise ValueError("retention_days must be 7 or 30")
         validated = await run_in_threadpool(
             validate_document_upload,
             filename=filename,
@@ -93,10 +100,18 @@ class DocumentUploadService:
             storage_bucket=stored_object.bucket,
             storage_key=stored_object.key,
             storage_etag=stored_object.etag,
+            retention_days=retention_days,
+            expires_at=datetime.now(UTC) + timedelta(days=retention_days),
         )
 
         try:
             session.add(document)
+            record_audit(
+                session,
+                action=AuditAction.DOCUMENT_UPLOAD,
+                actor_id=owner_id,
+                resource_id=document_id,
+            )
             await session.commit()
         except Exception:
             await session.rollback()
