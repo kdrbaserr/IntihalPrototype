@@ -14,8 +14,8 @@ function sourceUrl(value: string | null) {
   } catch { return null; }
 }
 
-export function MatchReport({ analysisId, apiBaseUrl, userId }: {
-  analysisId: string; apiBaseUrl: string; userId: string;
+export function MatchReport({ analysisId, apiBaseUrl }: {
+  analysisId: string; apiBaseUrl: string;
 }) {
   const [opened, setOpened] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -38,7 +38,7 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
     setPrintLoading(true);
     setPrintError("");
     try {
-      const options = { headers: { "X-User-ID": userId }, signal: controller.signal };
+      const options = { credentials: "include" as const, signal: controller.signal };
       const response = await fetch(`${apiBaseUrl}/analyses/${analysisId}`, options);
       if (!response.ok) throw new Error("Analysis metadata unavailable");
       const metadata = await response.json();
@@ -77,7 +77,7 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
         do {
           const response = await fetch(
             `${apiBaseUrl}/analyses/${analysisId}/matches?limit=100&offset=${matches.length}`,
-            { headers: { "X-User-ID": userId }, signal: controller.signal },
+            { credentials: "include", signal: controller.signal },
           );
           if (!response.ok) throw new Error("Match request failed");
           const page = await response.json();
@@ -101,7 +101,7 @@ export function MatchReport({ analysisId, apiBaseUrl, userId }: {
     }
     void load();
     return () => controller.abort();
-  }, [opened, refresh, analysisId, apiBaseUrl, userId]);
+  }, [opened, refresh, analysisId, apiBaseUrl]);
 
   if (!opened) return <button type="button" className="upload-button" onClick={() => setOpened(true)}>
     Eşleşmeleri göster

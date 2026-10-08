@@ -106,7 +106,7 @@ describe("DocumentWorkflow", () => {
     ["analyzing", "Karşılaştırılıyor", "izinli kaynaklarla"],
   ])("explains %s and distinguishes current, finished and pending stages", async (status, label, description) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(status)));
-    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" />));
     expect(screen.getByRole("status")).toHaveTextContent(label);
     expect(screen.getByText(new RegExp(description))).toBeInTheDocument();
     const items = within(screen.getByRole("list", { name: "Analiz aşamaları" })).getAllByRole("listitem");
@@ -122,7 +122,7 @@ describe("DocumentWorkflow", () => {
     const fetcher = vi.fn().mockResolvedValueOnce(response("extracting"))
       .mockResolvedValue(response("failed", "processing_timeout"));
     vi.stubGlobal("fetch", fetcher);
-    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" />));
     await act(async () => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByRole("alert")).toHaveTextContent("ayrılan süre doldu");
     expect(screen.getByRole("alert")).toHaveTextContent("Son görülen aşama: Metin çıkarılıyor");
@@ -135,14 +135,14 @@ describe("DocumentWorkflow", () => {
 
   it("shows a safe failure even when no failure code is supplied", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response("failed")));
-    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" />));
     expect(screen.getByRole("alert")).toHaveTextContent("Dosyanı kontrol edip yeniden yükle");
     expect(screen.queryByText(/Son görülen aşama/)).not.toBeInTheDocument();
   });
 
   it("does not offer start before the first status response arrives", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise(() => {})));
-    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" />));
     expect(screen.getByRole("status")).toHaveTextContent("Durum kontrol ediliyor");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
@@ -152,7 +152,7 @@ describe("DocumentWorkflow", () => {
       .mockRejectedValueOnce(new Error("offline"))
       .mockResolvedValue(response("completed"));
     vi.stubGlobal("fetch", fetcher);
-    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" userId="owner" />));
+    await act(async () => render(<DocumentWorkflow documentId="doc-id" apiBaseUrl="/api/v1" />));
     await act(async () => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByRole("status")).toHaveTextContent("Karşılaştırılıyor");
     expect(screen.getByRole("alert")).toHaveTextContent("Bağlantı geldiğinde");

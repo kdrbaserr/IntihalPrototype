@@ -61,15 +61,16 @@ async def cleanup_document(
 
     # The tombstone commit released the first lock. Serialize completion so concurrent
     # retries cannot publish two successful audit events for the same cleanup.
-    document = await session.scalar(
+    refreshed_document = await session.scalar(
         select(Document)
         .where(Document.id == identifier)
         .with_for_update()
         .execution_options(populate_existing=True)
     )
-    if document is None or document.cleaned_at is not None:
+    if refreshed_document is None or refreshed_document.cleaned_at is not None:
         await session.rollback()
         return
+    document = refreshed_document
 
     analysis_ids = select(Analysis.id).where(Analysis.document_id == identifier)
     await session.execute(delete(Match).where(Match.analysis_id.in_(analysis_ids)))

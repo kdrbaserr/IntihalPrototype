@@ -138,7 +138,12 @@ async def login(
     valid = await run_in_threadpool(
         verify_password, body.password, user.password_hash if user else None
     )
-    if not valid or user is None or user.status is not UserStatus.ACTIVE:
+    if (
+        not valid
+        or user is None
+        or user.password_hash is None
+        or user.status is not UserStatus.ACTIVE
+    ):
         raise HTTPException(
             401, detail={"code": "invalid_credentials", "message": "E-posta veya parola hatalı."}
         )

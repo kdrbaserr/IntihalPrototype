@@ -1,0 +1,33 @@
+{
+  "scope": "Local validation, extraction, chunk scoring; not a live API/worker run",
+  "manifest_sha256": "a00b92d87ab4fa308acf80870783edd97cf0c364943b607ba5ad139dcf0c00da",
+  "algorithm_version": "classical-hybrid-v2",
+  "threshold": "0.7500",
+  "files_checked": 7,
+  "checks": [
+    {
+      "path": "documents/exact-akademik-kaynak-gosterme.txt",
+      "chunks": 4,
+      "maximum_chunk_score": 1.0,
+      "decision": "match"
+    },
+    {
+      "path": "documents/exact-veri-butunlugu.pdf",
+      "chunks": 4,
+      "maximum_chunk_score": 1.0,
+      "decision": "match"
+    },
+    {
+      "path": "documents/exact-tekrarlanabilir-arastirma.docx",
+      "chunks": 5,
+      "maximum_chunk_score": 1.0,
+      "decision": "match"
+    },
+    {
+      "path": "documents/unrelated.txt",
+      "chunks": 3,
+      "maximum_chunk_score": 0.009813053147045591,
+      "decision": "no_match"
+    }
+  ]
+}

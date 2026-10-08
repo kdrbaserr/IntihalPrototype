@@ -32,11 +32,11 @@ class Settings(BaseSettings):
     minio_bucket: str = "intihal-documents"
     minio_connect_timeout_seconds: float = 2.0
     minio_read_timeout_seconds: float = 5.0
-    algorithm_version: str = Field(default="classical-hybrid-v1", min_length=1, max_length=100)
-    similarity_threshold: Decimal = Field(default=Decimal("0.8000"), ge=0, le=1)
+    algorithm_version: str = Field(default="classical-hybrid-v2", min_length=1, max_length=100)
+    similarity_threshold: Decimal = Field(default=Decimal("0.7500"), ge=0, le=1)
     word_tfidf_weight: Decimal = Field(default=Decimal("0.50"), ge=0, le=1)
-    character_tfidf_weight: Decimal = Field(default=Decimal("0.30"), ge=0, le=1)
-    word_overlap_weight: Decimal = Field(default=Decimal("0.20"), ge=0, le=1)
+    character_tfidf_weight: Decimal = Field(default=Decimal("0.25"), ge=0, le=1)
+    word_overlap_weight: Decimal = Field(default=Decimal("0.25"), ge=0, le=1)
     redis_host: str = "localhost"
     redis_port: int = Field(default=6379, ge=1, le=65535)
     redis_password: SecretStr = SecretStr("local-redis-change-me")

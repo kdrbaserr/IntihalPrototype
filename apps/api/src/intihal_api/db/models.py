@@ -353,8 +353,8 @@ class Analysis(BaseModel):
     algorithm_version: Mapped[str] = mapped_column(String(100), nullable=False)
     similarity_threshold: Mapped[Decimal] = mapped_column(
         Numeric(5, 4),
-        default=Decimal("0.8000"),
-        server_default="0.8000",
+        default=Decimal("0.7500"),
+        server_default="0.7500",
         nullable=False,
     )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

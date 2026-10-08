@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hmac
+from collections.abc import Iterable
 from typing import BinaryIO, Protocol
 from uuid import UUID
 
 from sqlalchemy import delete
+from sqlalchemy.sql import Executable
 from starlette.concurrency import run_in_threadpool
 
 from intihal_api.core.audit import AuditAction, AuditOutcome, record_audit
@@ -21,13 +23,13 @@ FORMAT_BY_CONTENT_TYPE = {
 
 
 class SourceProcessingSession(Protocol):
-    def add_all(self, instances: list[object]) -> None: ...
+    def add_all(self, instances: Iterable[object]) -> None: ...
 
     async def commit(self) -> None: ...
 
     async def rollback(self) -> None: ...
 
-    async def execute(self, statement: object) -> object: ...
+    async def execute(self, statement: Executable) -> object: ...
 
 
 class UnsupportedSourceContentTypeError(ValueError):

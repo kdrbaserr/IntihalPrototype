@@ -1,5 +1,7 @@
 """Owner-scoped queries shared by document, analysis and report-data endpoints."""
 
+from __future__ import annotations
+
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -27,11 +29,11 @@ def document_owner_filter(current_user: User) -> ColumnElement[bool]:
     )
 
 
-def owned_documents_statement(current_user: User) -> Select[tuple[Document]]:
+def owned_documents_statement(current_user: User) -> Select[Document]:
     return select(Document).where(document_owner_filter(current_user))
 
 
-def owned_analyses_statement(current_user: User) -> Select[tuple[Analysis, Document]]:
+def owned_analyses_statement(current_user: User) -> Select[Analysis, Document]:
     return (
         select(Analysis, Document)
         .join(Document, Analysis.document_id == Document.id)
@@ -41,7 +43,7 @@ def owned_analyses_statement(current_user: User) -> Select[tuple[Analysis, Docum
 
 def owned_matches_statement(
     current_user: User,
-) -> Select[tuple[Match, DocumentChunk, SourceChunk, SourceDocument]]:
+) -> Select[Match, DocumentChunk, SourceChunk, SourceDocument]:
     # Independent foreign keys do not guarantee that a match's chunk belongs to
     # its analysis document. Enforce that relationship before exposing evidence.
     return (

@@ -1,0 +1,389 @@
+{
+  "measured_at": "2026-10-08T22:13:54.335685+03:00",
+  "format": "TXT",
+  "sample_interval_seconds": 0.1,
+  "repeats": 3,
+  "git_revision": "c0c0aa4602c84a491d3ac199b4c4366fe9433a18",
+  "method": "Live API + existing Celery worker; synthetic repeated sample-corpus text",
+  "runs": [
+    {
+      "size": "small",
+      "repeat": 1,
+      "bytes": 10240,
+      "words": 1153,
+      "document_id": "c6ae263f-e281-4fba-9062-7607bd7cd2f0",
+      "upload_seconds": 0.04757689998950809,
+      "analysis_id": "eb468eb0-10c6-44e6-bd22-1b5c5090d69d",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.043967499979771674,
+      "queue_and_processing_seconds": 20.614823500043713,
+      "upload_to_completion_seconds": 20.706367900012992,
+      "analysis_seconds": 16.556187,
+      "memory": {
+        "api": {
+          "sample_count": 206,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 148.44140625,
+          "cgroup_peak_mib": 161.62890625
+        },
+        "worker": {
+          "sample_count": 206,
+          "rss_baseline_mib": 370.63671875,
+          "rss_peak_mib": 372.46484375,
+          "cgroup_baseline_mib": 216.48828125,
+          "cgroup_peak_mib": 233.75
+        }
+      },
+      "report_seconds": 0.06015139992814511,
+      "matches": 128,
+      "cleanup_verified": true
+    },
+    {
+      "size": "medium",
+      "repeat": 1,
+      "bytes": 102400,
+      "words": 11773,
+      "document_id": "c6166a92-689a-4a7e-ae4d-b9af822589df",
+      "upload_seconds": 0.02745130006223917,
+      "analysis_id": "3d0a05ab-c1f8-4837-b113-6d7ce1631080",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.01288969989400357,
+      "queue_and_processing_seconds": 40.28554040007293,
+      "upload_to_completion_seconds": 40.325881400029175,
+      "analysis_seconds": 26.738694,
+      "memory": {
+        "api": {
+          "sample_count": 400,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 148.875,
+          "cgroup_peak_mib": 162.8828125
+        },
+        "worker": {
+          "sample_count": 400,
+          "rss_baseline_mib": 372.46484375,
+          "rss_peak_mib": 386.5703125,
+          "cgroup_baseline_mib": 237.29296875,
+          "cgroup_peak_mib": 280.25390625
+        }
+      },
+      "report_seconds": 0.0171820999821648,
+      "matches": 1308,
+      "cleanup_verified": true
+    },
+    {
+      "size": "large",
+      "repeat": 1,
+      "bytes": 1048576,
+      "words": 120601,
+      "document_id": "357aee62-ce15-4f6c-975f-a8c3430efd7c",
+      "upload_seconds": 0.07336490007583052,
+      "analysis_id": "4065e29f-a8d7-4d4b-a40c-e704b2ed954b",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.02250249998178333,
+      "queue_and_processing_seconds": 144.71042199991643,
+      "upload_to_completion_seconds": 144.80628939997405,
+      "analysis_seconds": 140.171234,
+      "memory": {
+        "api": {
+          "sample_count": 1437,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 149.59765625,
+          "cgroup_peak_mib": 180.5546875
+        },
+        "worker": {
+          "sample_count": 1436,
+          "rss_baseline_mib": 386.5703125,
+          "rss_peak_mib": 486.6484375,
+          "cgroup_baseline_mib": 232.67578125,
+          "cgroup_peak_mib": 377.1015625
+        }
+      },
+      "report_seconds": 0.12338629993610084,
+      "matches": 13400,
+      "cleanup_verified": true
+    },
+    {
+      "size": "small",
+      "repeat": 2,
+      "bytes": 10240,
+      "words": 1153,
+      "document_id": "3b499e95-05af-4eff-a891-2d4eeb50b264",
+      "upload_seconds": 0.04270979994907975,
+      "analysis_id": "83ce7ceb-cca4-4148-a4d8-dbfa78d6c92f",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.03369469998870045,
+      "queue_and_processing_seconds": 20.29676240007393,
+      "upload_to_completion_seconds": 20.37316690001171,
+      "analysis_seconds": 16.294394,
+      "memory": {
+        "api": {
+          "sample_count": 202,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 157.4375,
+          "cgroup_peak_mib": 170.76953125
+        },
+        "worker": {
+          "sample_count": 201,
+          "rss_baseline_mib": 459.078125,
+          "rss_peak_mib": 459.09375,
+          "cgroup_baseline_mib": 337.08203125,
+          "cgroup_peak_mib": 337.33984375
+        }
+      },
+      "report_seconds": 0.029243399971164763,
+      "matches": 128,
+      "cleanup_verified": true
+    },
+    {
+      "size": "medium",
+      "repeat": 2,
+      "bytes": 102400,
+      "words": 11773,
+      "document_id": "befb7040-e215-4c01-890c-4d44660f8392",
+      "upload_seconds": 0.043927500024437904,
+      "analysis_id": "4b31ccbc-432f-4358-a21f-a2da55114f18",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.0347109999274835,
+      "queue_and_processing_seconds": 41.47706669999752,
+      "upload_to_completion_seconds": 41.55570519994944,
+      "analysis_seconds": 27.927103,
+      "memory": {
+        "api": {
+          "sample_count": 412,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 157.61328125,
+          "cgroup_peak_mib": 171.10546875
+        },
+        "worker": {
+          "sample_count": 411,
+          "rss_baseline_mib": 454.0859375,
+          "rss_peak_mib": 454.10546875,
+          "cgroup_baseline_mib": 332.16015625,
+          "cgroup_peak_mib": 387.30859375
+        }
+      },
+      "report_seconds": 0.035097099957056344,
+      "matches": 1308,
+      "cleanup_verified": true
+    },
+    {
+      "size": "large",
+      "repeat": 2,
+      "bytes": 1048576,
+      "words": 120601,
+      "document_id": "a1f451b0-4dd5-4cfc-bcf5-8b5a67fd435e",
+      "upload_seconds": 0.11710699996910989,
+      "analysis_id": "c7623571-a785-4bea-80d6-73d903af9794",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.044586900039575994,
+      "queue_and_processing_seconds": 148.81797869992442,
+      "upload_to_completion_seconds": 148.9796725999331,
+      "analysis_seconds": 145.142535,
+      "memory": {
+        "api": {
+          "sample_count": 1478,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 156.671875,
+          "cgroup_peak_mib": 171.53515625
+        },
+        "worker": {
+          "sample_count": 1477,
+          "rss_baseline_mib": 449.09375,
+          "rss_peak_mib": 492.0625,
+          "cgroup_baseline_mib": 327.30078125,
+          "cgroup_peak_mib": 383.4453125
+        }
+      },
+      "report_seconds": 0.1001960999565199,
+      "matches": 13400,
+      "cleanup_verified": true
+    },
+    {
+      "size": "small",
+      "repeat": 3,
+      "bytes": 10240,
+      "words": 1153,
+      "document_id": "218382c0-ac3a-478b-b188-b8bb3d13ec0a",
+      "upload_seconds": 0.02510119997896254,
+      "analysis_id": "89541f5e-6ddc-4683-a4cd-a305f9ede0fc",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.014328800025396049,
+      "queue_and_processing_seconds": 30.681459999992512,
+      "upload_to_completion_seconds": 30.72088999999687,
+      "analysis_seconds": 16.153774,
+      "memory": {
+        "api": {
+          "sample_count": 304,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 166.51171875,
+          "cgroup_peak_mib": 171.91015625
+        },
+        "worker": {
+          "sample_count": 305,
+          "rss_baseline_mib": 471.0625,
+          "rss_peak_mib": 471.07421875,
+          "cgroup_baseline_mib": 349.5546875,
+          "cgroup_peak_mib": 404.4921875
+        }
+      },
+      "report_seconds": 0.02449239999987185,
+      "matches": 128,
+      "cleanup_verified": true
+    },
+    {
+      "size": "medium",
+      "repeat": 3,
+      "bytes": 102400,
+      "words": 11773,
+      "document_id": "121209e3-a3c5-40d1-beb7-71aa6ed00cca",
+      "upload_seconds": 0.03778719995170832,
+      "analysis_id": "d09aa6b8-a564-43eb-9ff6-442550c835ac",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.012386000016704202,
+      "queue_and_processing_seconds": 41.48048849997576,
+      "upload_to_completion_seconds": 41.530661699944176,
+      "analysis_seconds": 27.347373,
+      "memory": {
+        "api": {
+          "sample_count": 412,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 157.55859375,
+          "cgroup_peak_mib": 171.3671875
+        },
+        "worker": {
+          "sample_count": 412,
+          "rss_baseline_mib": 470.0625,
+          "rss_peak_mib": 470.0859375,
+          "cgroup_baseline_mib": 348.6640625,
+          "cgroup_peak_mib": 402.015625
+        }
+      },
+      "report_seconds": 0.03496020007878542,
+      "matches": 1308,
+      "cleanup_verified": true
+    },
+    {
+      "size": "large",
+      "repeat": 3,
+      "bytes": 1048576,
+      "words": 120601,
+      "document_id": "7ecabc91-0b4f-489c-b9eb-8583c9b27c0a",
+      "upload_seconds": 0.056783100008033216,
+      "analysis_id": "72c15f29-a68a-406e-a450-7a3ccdfb21d8",
+      "status": "completed",
+      "failure_reason": null,
+      "submit_seconds": 0.022936500026844442,
+      "queue_and_processing_seconds": 147.49628770002164,
+      "upload_to_completion_seconds": 147.57600730005652,
+      "analysis_seconds": 143.648809,
+      "memory": {
+        "api": {
+          "sample_count": 1464,
+          "rss_baseline_mib": 29.55859375,
+          "rss_peak_mib": 29.55859375,
+          "cgroup_baseline_mib": 158.04296875,
+          "cgroup_peak_mib": 206.8125
+        },
+        "worker": {
+          "sample_count": 1464,
+          "rss_baseline_mib": 467.0703125,
+          "rss_peak_mib": 492.5390625,
+          "cgroup_baseline_mib": 345.0859375,
+          "cgroup_peak_mib": 397.94921875
+        }
+      },
+      "report_seconds": 0.1029831999912858,
+      "matches": 13400,
+      "cleanup_verified": true
+    }
+  ],
+  "summary": [
+    {
+      "size": "small",
+      "bytes": 10240,
+      "words": 1153,
+      "runs": 3,
+      "completed_runs": 3,
+      "median_upload_seconds": 0.04270979994907975,
+      "median_total_seconds": 20.706367900012992,
+      "min_total_seconds": 20.37316690001171,
+      "max_total_seconds": 30.72088999999687,
+      "median_processing_window_seconds": 16.294394,
+      "max_worker_cgroup_mib": 404.4921875,
+      "max_worker_cgroup_increase_mib": 54.9375,
+      "max_worker_rss_mib": 471.07421875,
+      "max_api_cgroup_mib": 171.91015625,
+      "matches": 128
+    },
+    {
+      "size": "medium",
+      "bytes": 102400,
+      "words": 11773,
+      "runs": 3,
+      "completed_runs": 3,
+      "median_upload_seconds": 0.03778719995170832,
+      "median_total_seconds": 41.530661699944176,
+      "min_total_seconds": 40.325881400029175,
+      "max_total_seconds": 41.55570519994944,
+      "median_processing_window_seconds": 27.347373,
+      "max_worker_cgroup_mib": 402.015625,
+      "max_worker_cgroup_increase_mib": 55.1484375,
+      "max_worker_rss_mib": 470.0859375,
+      "max_api_cgroup_mib": 171.3671875,
+      "matches": 1308
+    },
+    {
+      "size": "large",
+      "bytes": 1048576,
+      "words": 120601,
+      "runs": 3,
+      "completed_runs": 3,
+      "median_upload_seconds": 0.07336490007583052,
+      "median_total_seconds": 147.57600730005652,
+      "min_total_seconds": 144.80628939997405,
+      "max_total_seconds": 148.9796725999331,
+      "median_processing_window_seconds": 143.648809,
+      "max_worker_cgroup_mib": 397.94921875,
+      "max_worker_cgroup_increase_mib": 144.42578125,
+      "max_worker_rss_mib": 492.5390625,
+      "max_api_cgroup_mib": 206.8125,
+      "matches": 13400
+    }
+  ],
+  "environment": {
+    "api_python": "3.13.16",
+    "api_sqlalchemy": "2.1.4",
+    "worker_python": "3.13.16",
+    "worker_sqlalchemy": "2.1.3",
+    "docker_vm_memory_bytes": 8170147840,
+    "docker_vm_cpus": 16,
+    "worker_concurrency": 2,
+    "eligible_sources": 3,
+    "eligible_source_chunks": 13,
+    "algorithm": "classical-hybrid-v1",
+    "similarity_threshold": "0.8000",
+    "soft_timeout_seconds": 240,
+    "hard_timeout_seconds": 300,
+    "dispatch_interval_seconds": 15
+  },
+  "memory_method": "100ms sampling of worker/API cgroup memory.current (includes cache, shared memory and sampler). Worker RSS sums Celery processes (shared pages counted repeatedly). API RSS sampled only Uvicorn launcher; use API cgroup for memory comparisons.",
+  "timing_method": "Client perf_counter: upload start to observed terminal state; 250ms polling. Server analysis started_at to completed_at begins at extraction and includes waiting between worker stages. Report timing fetches the first match only.",
+  "document_method": "Synthetic Turkish sample-corpus text repeated to exactly 10KiB/100KiB/1MiB, padded with ASCII. Serial small-medium-large order repeated three times; existing warm workers, no restarts, no application source changes during measurement.",
+  "physical_cleanup_verified": true
+}

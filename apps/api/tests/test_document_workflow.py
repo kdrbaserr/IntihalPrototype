@@ -1,8 +1,10 @@
 import asyncio
+import json
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from hashlib import sha256
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -11,6 +13,7 @@ from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from auth_helpers import session_headers
+from intihal_api.analysis.hybrid import calculate_hybrid_similarity
 from intihal_api.core.config import Settings
 from intihal_api.db.base import Base
 from intihal_api.db.models import (
@@ -150,6 +153,61 @@ def test_workflow_persists_states_evidence_and_is_idempotent():
             assert document.next_attempt_at is None
             assert (await queue_document(document, session, settings)).id == analysis.id
             assert len(list(await session.scalars(select(Analysis)))) == 1
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("version", ["classical-hybrid-v1", "unknown-algorithm-v999"])
+def test_worker_preserves_v1_snapshot_under_v2_defaults_and_rejects_unknown_versions(version):
+    fixture = json.loads(
+        (Path(__file__).parent / "fixtures/similarity/benchmark-v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    pair = next(case for case in fixture["cases"] if case["category"] == "minor_edit")
+
+    async def scenario():
+        async with database() as (session, document, _):
+            legacy = Settings.model_validate(
+                {
+                    "algorithm_version": version,
+                    "similarity_threshold": "0.8009",
+                    "word_tfidf_weight": "0.50",
+                    "character_tfidf_weight": "0.30",
+                    "word_overlap_weight": "0.20",
+                }
+            )
+            current = Settings(_env_file=None)
+            assert current.algorithm_version == "classical-hybrid-v2"
+            # New weights would admit this pair at the old threshold, old weights reject it.
+            assert (
+                calculate_hybrid_similarity(pair["left"], pair["right"], settings=current).score
+                > 0.8009
+            )
+            content = pair["left"].encode()
+            document.size_bytes = len(content)
+            document.sha256 = sha256(content).hexdigest()
+            analysis = await queue_document(document, session, legacy)
+            snapshot = dict(analysis.config_snapshot)
+            await seed_source(session)
+            source = await session.scalar(select(SourceChunk))
+            source.content = pair["right"]
+            source.char_end = len(source.content)
+            source.content_sha256 = sha256(source.content.encode()).hexdigest()
+            await session.commit()
+            await extract_document(
+                document, analysis, session, StoredContent(pair["left"].encode())
+            )
+            if version != "classical-hybrid-v1":
+                with pytest.raises(ValueError, match="unsupported_algorithm_version"):
+                    await analyze_document(document, analysis, session, current)
+                return
+            await analyze_document(document, analysis, session, current)
+            assert analysis.status is AnalysisStatus.COMPLETED
+            assert list(await session.scalars(select(Match))) == []
+            assert analysis.algorithm_version == version
+            assert analysis.similarity_threshold == Decimal("0.8009")
+            assert analysis.config_snapshot == snapshot
 
     asyncio.run(scenario())
 

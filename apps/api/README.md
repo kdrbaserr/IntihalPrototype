@@ -1,6 +1,11 @@
 # API
 
-Bu klasör projenin FastAPI tabanlı backend uygulamasını barındıracaktır.
+Bu klasör FastAPI backend, Celery işleri ve analiz kodunu içerir.
+
+Kurulum/güncelleme: [yerel geliştirme](../../docs/local-development.md).
+Tam endpoint ve örnek akış: [API referansı](../../docs/api-reference.md).
+Saklama/silme: [veri politikası](../../docs/data-policy.md).
+Ürün kapsamı: [bilinen sınırlar](../../docs/known-limitations.md), [riskler](../../docs/risks.md).
 
 API'nin sorumlulukları:
 
@@ -96,13 +101,15 @@ servis adı olan `postgres` kullanılır.
 bağlar. Sahibi olan belge varken kullanıcının fiziksel olarak silinmesi `RESTRICT` ile
 engellenir; hesap kapatma işlemi için kullanıcı durumu `disabled` yapılmalıdır.
 
-Dosya içeriği PostgreSQL'e yazılmaz. `documents` tablosundaki `storage_bucket` ve
+Dosyanın ikilik aslı MinIO'dadır; çıkarılmış normalize metin parçaları PostgreSQL'dedir.
+`documents` tablosundaki `storage_bucket` ve
 `storage_key` MinIO nesnesini gösterir; `storage_etag`, `sha256`, `content_type` ve
 `size_bytes` bütünlük ve dosya metadatasını taşır. Aynı bucket/key çifti yalnızca bir
 belgede kullanılabilir. Belge yaşam döngüsü `uploaded`, `queued`, `extracting`,
 `analyzing`, `completed`, `failed`
 ve `deleted` durumlarıyla izlenir. `deleted`, kaydın denetim izi için tutulduğu mantıksal
-silme durumudur; MinIO nesnesini temizleyen iş ayrıca uygulanmalıdır.
+silme durumudur. API/süre temizliği MinIO aslını, kullanıcı chunk'larını, analiz ve
+eşleşmelerini fiziksel kaldırır; metadata tombstone ve audit kayıtları kalır.
 
 ## İzinli kaynak havuzu
 
@@ -204,7 +211,7 @@ teknik kayıtların içine bakmadan anlaşılabilecek kısa bir açıklama `fail
 alanına yazılmalıdır.
 
 `similarity_threshold`, hangi puanın rapora alınmaya değer sayıldığını 0 ile 1 arasında
-saklar. Varsayılan değer `0.8000`, yani yüzde 80'dir. `algorithm_version` da mutlaka
+saklar. Yeni v2 varsayılanı `0.7500`, yani yüzde 75'tir. `algorithm_version` da mutlaka
 kaydedilir; böylece yöntem ileride değişse bile eski sonucun hangi sürümle üretildiği
 bilinir.
 
@@ -217,7 +224,8 @@ Klasik hibrit puan; kelime TF-IDF, karakter TF-IDF ve açıklanabilir kelime kü
 örtüşmesini birleştirir. Ağırlıklar sırasıyla `INTIHAL_WORD_TFIDF_WEIGHT`,
 `INTIHAL_CHARACTER_TFIDF_WEIGHT` ve `INTIHAL_WORD_OVERLAP_WEIGHT` ayarlarından okunur;
 toplamları tam olarak `1` değilse uygulama geçersiz config ile başlamaz. Varsayılan dağılım
-`0.50 / 0.30 / 0.20` değerleridir.
+v2 için `0.50 / 0.25 / 0.25` değerleridir. [Kalibrasyon](../../docs/similarity-calibration-2026-10-08.md)
+dört sentetik örneğe dayanan geçici ayar seçimidir; genel doğruluk iddiası değildir.
 
 Yeni analiz kaydı oluşturulurken `INTIHAL_ALGORITHM_VERSION` ve
 `INTIHAL_SIMILARITY_THRESHOLD` değerlerinin ikisi de `analyses` tablosuna kopyalanır.
@@ -243,8 +251,8 @@ sayısını ve birleştirilmiş kanıt aralıklarını birlikte döndürür.
 
 ### Sürümlü benzerlik örnekleri
 
-Algoritmanın beklenen davranışı `tests/fixtures/similarity/benchmark-v1.json` dosyasında
-sürümlenir. Veri seti; birebir, küçük değişiklikli, ortak akademik kalıp içeren ve
+Algoritmanın davranışı `tests/fixtures/similarity/benchmark-v1.json` ve
+`benchmark-v2.json` dosyalarında sürümlenir. Veri seti; birebir, küçük değişiklikli, ortak akademik kalıp içeren ve
 ilgisiz metin çiftlerini birlikte tutar. Her örnekte değişmeyen bir kimlik, kullanım
 amacı, beklenen skor, kabul aralığı ve eşik kararı bulunur.
 
@@ -277,9 +285,9 @@ aralıklarını bozan algoritma değişikliklerini birleştirmeden önce durduru
 
 Bir analiz silinirse ona ait eşleşmeler de silinir. Buna karşılık sonuçta kullanılmış
 belge ve kaynak parçaları doğrudan silinemez; önce bağlı analiz kaydı kaldırılmalıdır.
-Bu tercih, rapor dururken raporun dayandığı kanıtın kaybolmasını önler. Normal kullanımda
-belgeleri fiziksel olarak silmek yerine mevcut `deleted` veya `disabled` durumları
-kullanılmalıdır.
+Bu tercih rapor dururken kanıtın kaybolmasını önler. Kullanıcı belge silmesi bağlı
+analiz/eşleşmeleri kaldırıp dosya/chunk'ları temizler ve `deleted` tombstone bırakır.
+Kaynak `disabled` ise yalnız yeni analiz havuzundan çıkar; dosya ve eski kanıt kalır.
 
 ## Migration yönetimi
 

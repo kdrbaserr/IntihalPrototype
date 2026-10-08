@@ -69,6 +69,17 @@ def test_current_algorithm_defaults_match_the_latest_benchmark_contract() -> Non
     assert fields["word_overlap_weight"].default == Decimal(weights["word_overlap"])
 
 
+def test_versioned_shared_examples_preserve_texts_and_fixed_labels() -> None:
+    shared_examples = {}
+    for path in BENCHMARK_PATHS:
+        for case in load_benchmark(path)["cases"]:
+            identifier = case["id"].rsplit("-v", 1)[0]
+            content = (case["left"], case["right"], case["expected"]["threshold_decision"])
+            if identifier in shared_examples:
+                assert content == shared_examples[identifier]
+            shared_examples[identifier] = content
+
+
 @pytest.mark.parametrize("benchmark_path", BENCHMARK_PATHS, ids=lambda path: path.stem)
 def test_score_bands_are_valid_separated_and_threshold_safe(benchmark_path: Path) -> None:
     benchmark = load_benchmark(benchmark_path)

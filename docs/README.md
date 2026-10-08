@@ -1,8 +1,21 @@
 # Dokümantasyon
 
-Bu klasör projenin teknik ve operasyonel belgelerini barındıracaktır.
+Son gözden geçirme: **8 Ekim 2026**. Güncel profil v2; migration head `20261008_12`.
 
-Burada zamanla şunlar tutulacaktır:
+| Konu | Başlangıç belgesi |
+|---|---|
+| Kurulum ve işletim | [Yerel geliştirme](local-development.md) |
+| API kullanımı | [API referansı](api-reference.md) |
+| Veri saklama ve silme | [Veri politikası](data-policy.md) |
+| Açık riskler | [Risk kaydı](risks.md) |
+| Bilinen sınırlar | [Kapsam ve sınırlar](known-limitations.md) |
+| Sürüm geçmişi | [Changelog](../CHANGELOG.md) |
+| v0.1.0 sürüm adayı | [Sürüm notu](releases/v0.1.0.md) |
+| Demo dosyaları ve senaryolar | [Sentetik demo paketi](../demo/v0.1.0/README.md) |
+
+Bu klasör teknik ve operasyonel belgeleri, tarihli ölçümleri ve politika kararlarını içerir.
+
+Ayrıntılı belgeler:
 
 - sistem mimarisi ve veri akışı,
 - yerel kurulum adımları,
@@ -32,9 +45,30 @@ Burada zamanla şunlar tutulacaktır:
 - yöntem, tarih, kaynaklar ve uyarı içeren yazdırılabilir görünüm (`printable-report.md`).
 - Playwright ile gerçek tarayıcı yükleme/bekleme/rapor akışı ve kapsam sınırları
   (`playwright-workflow.md`).
+- Küçük/orta/büyük belge süre ve bellek ölçümleri
+  ([8 Ekim 2026 sonuçları](document-performance-2026-10-08.md)).
+- Merge geçmişi, conflict çözümü ve backend tip kontrolü
+  ([8 Ekim 2026 incelemesi](merge-audit-2026-10-08.md)).
+- Etiketli regresyon setinde eşiklerin precision/recall ve yanlış karar etkisi
+  ([8 Ekim 2026 raporu](threshold-effects-2026-10-08.md)).
+- Ölçüme dayalı v2 eşik/ağırlık ayarları ve eski snapshot uyumluluğu
+  ([8 Ekim 2026 kalibrasyonu](similarity-calibration-2026-10-08.md)).
+- CI bağımlılık, container ve secret kontrolleri
+  ([8 Ekim 2026 tarama sonuçları](security-ci-2026-10-08.md)).
 
-Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
-açıkça kaydedeceğiz.
+Tarihli v1 raporları tarihsel kanıttır; güncel ayarları v2 kalibrasyon belgesi
+tanımlar. Yeni tarama ve ölçümler eski sonuçların üzerine yazılmadan kaydedilir.
+
+## Dokümantasyon doğrulaması
+
+8 Ekim 2026 gözden geçirmesinde kurulum scriptleri/Compose, API route ve şemaları,
+temizlik/retention kodu, v2 ayarları ve tarihli risk ölçümleri karşılaştırıldı.
+API tablosundaki 18 işlem üretilen OpenAPI ile eşleşir. README'ler ve docs içindeki
+32 belgenin yerel Markdown bağlantıları kontrol edildi; kırık bağlantı bulunmadı.
+PowerShell 7 API örneği sözdizimi kontrolünden geçti; örnek bu incelemede yeni
+kullanıcı/veri oluşturarak ayrıca çalıştırılmadı. Çalışan API'de health, versioned
+health, docs ve openapi.json adresleri 200 döndü; Compose config ve migration head
+doğrulandı. Uygulama davranışı bu dokümantasyon çalışmasında değiştirilmedi.
 
 ## Giriş ve roller
 

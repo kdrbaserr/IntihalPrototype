@@ -117,7 +117,10 @@ def _open_pdf(pdf_bytes: bytes) -> pymupdf.Document:
 def _extract_page(document: pymupdf.Document, page_index: int) -> ExtractedPdfPage:
     page_number = page_index + 1
     try:
-        text = normalize_extracted_text(document.load_page(page_index).get_text("text", sort=True))
+        raw_text = document.load_page(page_index).get_text("text", sort=True)
+        if not isinstance(raw_text, str):
+            raise TypeError("PDF text extraction returned an unexpected value")
+        text = normalize_extracted_text(raw_text)
     except (RuntimeError, TypeError, ValueError) as error:
         raise PdfPageExtractionError(page_number) from error
     return ExtractedPdfPage(page_number=page_number, text=text)

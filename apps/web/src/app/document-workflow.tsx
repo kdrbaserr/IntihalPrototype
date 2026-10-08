@@ -163,7 +163,7 @@ export function DocumentWorkflow({ documentId, apiBaseUrl, onSessionExpired }: {
         </button>
       )}
       {loaded && status === "completed" && analysisId && <MatchReport key={analysisId}
-        analysisId={analysisId} apiBaseUrl={apiBaseUrl} userId={userId} />}
+        analysisId={analysisId} apiBaseUrl={apiBaseUrl} />}
     </section>
   );
 }

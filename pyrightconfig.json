@@ -1,0 +1,13 @@
+{
+  "include": ["apps/api/src"],
+  "venvPath": "apps/api",
+  "venv": ".venv",
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic",
+  "executionEnvironments": [
+    {
+      "root": "apps/api/src",
+      "extraPaths": ["apps/api/src"]
+    }
+  ]
+}

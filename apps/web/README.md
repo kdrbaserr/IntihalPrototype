@@ -1,7 +1,8 @@
 # Web
 
 Bu klasör projenin Next.js ve TypeScript tabanlı kullanıcı arayüzünü
-barındıracaktır.
+barındırır. Tam kurulum [yerel geliştirme](../../docs/local-development.md),
+kullanım sınırları [kapsam belgesinde](../../docs/known-limitations.md) açıklanır.
 
 Web uygulamasının sorumlulukları:
 
@@ -10,13 +11,13 @@ Web uygulamasının sorumlulukları:
 - benzer bölümleri renkli ve kaynak bağlantılı biçimde göstermek,
 - rapor filtreleme ve yazdırma deneyimini sağlamak.
 
-Web uygulaması analiz yapmayacak; gerekli verileri API üzerinden alacaktır.
+Web uygulaması analiz işini API/worker'a gönderir; cookie oturumuyla sonuçları okur.
 
 ## Yerel çalıştırma
 
 ```powershell
 cd apps/web
-npm install
+npm ci
 npm run dev
 ```
 

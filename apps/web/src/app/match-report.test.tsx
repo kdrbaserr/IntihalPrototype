@@ -15,7 +15,7 @@ function page(items: MatchEvidence[], total = items.length) {
     range_convention: "start_inclusive_end_exclusive" }) };
 }
 function open() {
-  render(<MatchReport analysisId="analysis-id" apiBaseUrl="/api/v1" userId="owner" />);
+  render(<MatchReport analysisId="analysis-id" apiBaseUrl="/api/v1" />);
   fireEvent.click(screen.getByRole("button", { name: "Eşleşmeleri göster" }));
 }
 
@@ -29,7 +29,7 @@ describe("MatchReport", () => {
     await screen.findByText("2 eşleşme, 1 bölümde gösteriliyor.");
     expect(fetcher.mock.calls[0][0]).toBe("/api/v1/analyses/analysis-id/matches?limit=100&offset=0");
     expect(fetcher.mock.calls[1][0]).toBe("/api/v1/analyses/analysis-id/matches?limit=100&offset=1");
-    expect(fetcher.mock.calls[0][1].headers).toEqual({ "X-User-ID": "owner" });
+    expect(fetcher.mock.calls[0][1].credentials).toBe("include");
     const mark = screen.getByText("abcdefghij");
     expect(mark.tagName).toBe("MARK");
     expect(mark).toHaveAttribute("data-level", "high");
@@ -161,7 +161,7 @@ describe("MatchReport", () => {
     expect(within(dialog).queryByText("Kaynak b", { selector: "strong" })).not.toBeInTheDocument();
     expect(fetcher.mock.calls[1][0]).toBe("/api/v1/analyses/analysis-id");
     expect(fetcher.mock.calls[2][0]).toBe("/api/v1/documents/doc-id");
-    expect(fetcher.mock.calls[1][1].headers).toEqual({ "X-User-ID": "owner" });
+    expect(fetcher.mock.calls[1][1].credentials).toBe("include");
     fireEvent.click(within(dialog).getByRole("button", { name: "Önizlemeyi kapat" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

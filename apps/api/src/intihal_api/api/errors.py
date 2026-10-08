@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
+from fastapi import HTTPException as APIHTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
@@ -94,7 +95,7 @@ def install_error_handling(application: FastAPI) -> None:
     @application.exception_handler(HTTPException)
     async def http_error(request: Request, error: HTTPException):
         if request.scope.get("intihal_upload_limit_exceeded"):
-            error = HTTPException(413, detail={"code": "request_too_large"})
+            error = APIHTTPException(413, detail={"code": "request_too_large"})
         provided = error.detail.get("code") if isinstance(error.detail, dict) else None
         code = (
             provided

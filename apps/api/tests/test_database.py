@@ -243,7 +243,7 @@ def test_analysis_tracks_execution_and_algorithm_version() -> None:
     assert document_foreign_key.target_fullname == "documents.id"
     assert document_foreign_key.ondelete == "RESTRICT"
     assert mapper.columns.status.server_default.arg == AnalysisStatus.QUEUED.value
-    assert mapper.columns.similarity_threshold.server_default.arg == "0.8000"
+    assert mapper.columns.similarity_threshold.server_default.arg == "0.7500"
     assert mapper.relationships.matches.cascade.delete_orphan is True
 
     constraint_names = {constraint.name for constraint in Analysis.__table__.constraints}

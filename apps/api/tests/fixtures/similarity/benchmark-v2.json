@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "dataset_version": "classical-similarity-benchmark-v2",
+  "algorithm_version": "classical-hybrid-v2",
+  "similarity_threshold": "0.7500",
+  "score_tolerance": 1e-06,
+  "weights": {
+    "word_tfidf": "0.50",
+    "character_tfidf": "0.25",
+    "word_overlap": "0.25"
+  },
+  "cases": [
+    {
+      "id": "exact-copy-v2",
+      "category": "exact",
+      "purpose": "Aynı metnin bütün klasik sinyallerde tam eşleşme üretmesini doğrular.",
+      "left": "Makine öğrenmesi, verilerden örüntüler çıkararak tahmin üreten yöntemler bütünüdür.",
+      "right": "Makine öğrenmesi, verilerden örüntüler çıkararak tahmin üreten yöntemler bütünüdür.",
+      "expected": {
+        "score": 1.0,
+        "minimum": 1.0,
+        "maximum": 1.0,
+        "threshold_decision": "match"
+      }
+    },
+    {
+      "id": "minor-edit-v2",
+      "category": "minor_edit",
+      "purpose": "Tek sözcük eklenmiş küçük bir değişikliğin güçlü eşleşme olarak kalmasını doğrular.",
+      "left": "Makine öğrenmesi, verilerden örüntüler çıkararak tahmin üreten yöntemler bütünüdür.",
+      "right": "Makine öğrenmesi, verilerden örüntüler çıkararak doğru tahmin üreten yöntemler bütünüdür.",
+      "expected": {
+        "score": 0.801247,
+        "minimum": 0.8,
+        "maximum": 0.83,
+        "threshold_decision": "match"
+      }
+    },
+    {
+      "id": "shared-template-v2",
+      "category": "template",
+      "purpose": "Ortak akademik kalıbın, konusu farklı iki metni tam kopya seviyesine taşımamasını doğrular.",
+      "left": "Bu çalışmanın amacı, üniversite öğrencilerinin çevrim içi öğrenme deneyimlerini incelemektir. Araştırmada nitel yöntem kullanılmıştır.",
+      "right": "Bu çalışmanın amacı, belediye çalışanlarının iş doyumu düzeylerini incelemektir. Araştırmada nicel yöntem kullanılmıştır.",
+      "expected": {
+        "score": 0.291041,
+        "minimum": 0.25,
+        "maximum": 0.35,
+        "threshold_decision": "no_match"
+      }
+    },
+    {
+      "id": "unrelated-topics-v2",
+      "category": "unrelated",
+      "purpose": "Konu ve sözcük dağarcığı farklı metinlerin sıfıra yakın kalmasını doğrular.",
+      "left": "Fotosentez sırasında bitkiler ışık enerjisini kimyasal enerjiye dönüştürür.",
+      "right": "Osmanlı mimarisinde kubbe ve kemerler yapıların taşıyıcı düzeninde önemli yer tutar.",
+      "expected": {
+        "score": 0.003651,
+        "minimum": 0.0,
+        "maximum": 0.05,
+        "threshold_decision": "no_match"
+      }
+    }
+  ]
+}
