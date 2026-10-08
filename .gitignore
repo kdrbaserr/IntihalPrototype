@@ -1,5 +1,6 @@
 # Generated visual artifacts
 output/imagegen/
+output/security/
 
 # Python
 __pycache__/

@@ -1,0 +1,160 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Trivy 0.75.0 and Gitleaks 8.30.1: immutable scanner image digests.
+  TRIVY_IMAGE: aquasec/trivy@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+  GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+
+jobs:
+  python-dependencies:
+    name: Dependencies - Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Resolve application and development dependencies
+        run: |
+          mkdir -p security-results
+          python -m venv .audit-app
+          .audit-app/bin/python -m pip install -e 'apps/api[dev]'
+          .audit-app/bin/python -m pip freeze --exclude-editable > security-results/api-requirements.txt
+          python -m venv .audit-tool
+          .audit-tool/bin/python -m pip install pip-audit==2.10.1
+      - name: Audit resolved Python packages
+        run: >-
+          .audit-tool/bin/python -m pip_audit --strict --no-deps --disable-pip
+          -r security-results/api-requirements.txt --format json
+          --output security-results/pip-audit.json
+      - name: Save dependency audit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-python
+          path: security-results/
+          retention-days: 14
+
+  node-dependencies:
+    name: Dependencies - Node
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --prefix apps/web
+      - name: Audit all Node dependencies including development packages
+        run: |
+          mkdir -p security-results
+          npm audit --prefix apps/web --audit-level=high --json > security-results/npm-audit.json
+      - name: Save dependency audit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-node
+          path: security-results/
+          retention-days: 14
+
+  secrets:
+    name: Secrets - checkout and Git history
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare report directory
+        run: mkdir -p security-results
+      - name: Scan all fetched Git history
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" -v "$PWD/security-results:/reports" \
+            "$GITLEAKS_IMAGE" git /repo --log-opts=--all --redact=100 \
+            --exit-code=1 --report-format=json --report-path=/reports/gitleaks-history.json
+      - name: Scan checked out files
+        if: always()
+        run: |
+          mkdir -p /tmp/security-source
+          git ls-files -z | tar --null -T - -cf - | tar -xf - -C /tmp/security-source
+          docker run --rm -v /tmp/security-source:/repo:ro -v "$PWD/security-results:/reports" \
+            "$GITLEAKS_IMAGE" dir /repo --redact=100 --exit-code=1 \
+            --report-format=json --report-path=/reports/gitleaks-checkout.json
+      - name: Save redacted secret audit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-secrets-redacted
+          path: security-results/
+          retention-days: 14
+
+  containers:
+    name: Container - ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [api, web, minio, postgres, redis]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Prepare production image
+        env:
+          SCAN_IMAGE: ${{ matrix.image }}
+        run: |
+          mkdir -p security-results
+          case "$SCAN_IMAGE" in
+            api|web)
+              docker build --target production -t "security-$SCAN_IMAGE:ci" "apps/$SCAN_IMAGE"
+              ;;
+            minio)
+              version=$(python -c 'import re; from pathlib import Path; print(re.search(r"MINIO_VERSION: (\S+)", Path("compose.yaml").read_text())[1])')
+              docker build --build-arg "MINIO_VERSION=$version" -t security-minio:ci infra/minio
+              ;;
+            postgres|redis)
+              base=$(python -c 'import os,re; from pathlib import Path; print(re.search(r"image: ("+os.environ["SCAN_IMAGE"]+r":\S+)", Path("compose.yaml").read_text())[1])')
+              docker pull "$base"
+              docker tag "$base" "security-$SCAN_IMAGE:ci"
+              ;;
+          esac
+          docker image inspect "security-$SCAN_IMAGE:ci" --format '{{json .Id}}' > security-results/image-id.json
+      - name: Scan OS and application packages including unfixed vulnerabilities
+        env:
+          SCAN_IMAGE: ${{ matrix.image }}
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/security-results:/reports" "$TRIVY_IMAGE" image \
+            --image-src docker --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+            --timeout 15m --format json --output /reports/container.json "security-$SCAN_IMAGE:ci"
+      - name: Save container audit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-container-${{ matrix.image }}
+          path: security-results/
+          retention-days: 14
