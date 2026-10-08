@@ -80,13 +80,66 @@ docker compose logs -f api
 # Servisleri durdur ve container'ları kaldır
 docker compose down
 
-# Kod veya Dockerfile değişiminden sonra yeniden build et
+# Dockerfile, bağımlılık veya migration dosyaları değiştiğinde image'ları güncelle
 docker compose up -d --build --wait
+
+# Yeni migration'ları uygula
+docker compose exec -T api alembic upgrade head
+
+# Kaynak kod değişiminden sonra worker ve scheduler'ı yenile
+docker compose restart worker scheduler
+
+# Container'ların anlık CPU ve bellek kullanımını göster
+docker stats --no-stream
 ```
 
 `docker compose down` veritabanı verisini silmez; named volume'lar korunur.
 `-v` seçeneği volume'ları ve yerel verileri de siler, bu nedenle bilinçli
 kullanılmalıdır.
+
+Web ve API kaynak kodu bind mount üzerinden container'a bağlanır; bu servisler
+kod değişikliklerini otomatik yükler. Dockerfile çalışma ortamının tarifidir ve
+her özellik eklendiğinde değişmesi gerekmez. Migration dosyaları image'a kopyalandığı
+için kaynak kodun güncel olması, container'daki migration'ların da güncel olduğu
+anlamına gelmez. `healthy` sonucu da yalnızca servis sağlık kontrolünü doğrular;
+kayıt, analiz, rapor ve silme akışları ayrıca sınanmalıdır.
+
+## Gerçek servislerle uçtan uca test
+
+Compose servisleri çalışır, migration'lar uygulanmış ve sentetik örnek kaynak havuzu
+hazır olmalıdır. Ardından:
+
+```powershell
+cd apps/web
+npm run test:e2e:live
+```
+
+Bu test API isteklerini taklit etmez. Tarayıcıdan yeni bir test hesabı açar, giriş
+yapar, sayfa yenilenince oturumu doğrular, 7 gün saklama ile TXT yükler, Celery
+analizini bekler, pozitif eşleşme ve yazdırılabilir PDF raporunu kontrol eder.
+Silme düğmesi henüz arayüzde olmadığı için silmeyi aynı oturumla gerçek API
+üzerinden sınar; belge ve raporun 404 dönmesini, listeden çıkmasını ve tekrarlanan
+silmenin 204 dönmesini doğrular. Çıkış sonrası oturumun 401 döndüğünü de kontrol eder.
+
+Test dosyasını siler; test hesabı ve denetim için tutulan belge metadatası kalır.
+Başarılı koşunun PDF'i `apps/web/test-results/live/` altında, HTML raporu
+`apps/web/playwright-report/live/` altında oluşur. Başarısız koşularda ekran
+görüntüsü ve Playwright trace kaydedilir. Varsayılan adresler localhost:3000 ve
+localhost:8000/api/v1; gerektiğinde `E2E_WEB_URL` ve `E2E_API_URL` ile değiştirilebilir.
+
+`npm run test:e2e` ise ayrı geliştirme sunucusunda, taklit API ile arayüzün
+hata/yeniden deneme senaryolarını kontrol eder.
+
+Fiziksel temizliği ayrıca okumak için test raporundaki `live-identifiers`
+ekinden belge ve analiz UUID'lerini alıp proje kökünde çalıştır:
+
+```powershell
+Get-Content -Raw scripts/verify-document-cleanup.py | docker compose exec -T api python - BELGE_UUID ANALIZ_UUID
+```
+
+Bu salt okunur kontrol belge metadatasının `deleted`/`cleaned_at` durumunu,
+analiz/eşleşme/metin parçalarının sıfır kaldığını ve MinIO'nun `NoSuchKey`
+döndüğünü doğrular.
 
 ## Sorun giderme
 

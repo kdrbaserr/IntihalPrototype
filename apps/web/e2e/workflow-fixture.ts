@@ -34,7 +34,11 @@ export async function workflowApi(page: Page, options: { timeout?: boolean; repo
     const url = new URL(request.url());
     const path = url.pathname;
     const json = (body: unknown, status = 200) => route.fulfill({ status, json: body });
-    expect(request.headers()["x-user-id"]).toBe("11111111-1111-1111-1111-111111111111");
+    expect(request.headers()["x-user-id"]).toBeUndefined();
+    if (path === "/api/v1/auth/me") return json({
+      id: "11111111-1111-1111-1111-111111111111", email: "fixture@example.test",
+      display_name: "Test Kullanıcı", role: "user",
+    });
     if (path === "/api/v1/documents" && request.method() === "POST") {
       counts.uploads++;
       expect(request.headers()["content-type"]).toContain("multipart/form-data");

@@ -5,6 +5,7 @@ process.env.PLAYWRIGHT_BROWSERS_PATH ??= fileURLToPath(new URL("./node_modules/.
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "**/live-workflow.spec.ts",
   fullyParallel: false,
   workers: 1,
   retries: 0,
