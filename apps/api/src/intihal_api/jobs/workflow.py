@@ -3,6 +3,7 @@ from decimal import Decimal
 from difflib import SequenceMatcher
 from hashlib import sha256
 from io import BytesIO
+from typing import TypedDict
 from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, select
@@ -81,7 +82,7 @@ async def retry_document(
     runs = await session.scalar(
         select(func.count(Analysis.id)).where(Analysis.document_id == document.id)
     )
-    if runs - 1 >= settings.analysis_manual_retry_limit:
+    if (runs or 0) - 1 >= settings.analysis_manual_retry_limit:
         raise AnalysisRetryError("analysis_retry_limit")
     return await _enqueue(
         document, session, settings, delay=settings.analysis_manual_retry_delay_seconds
@@ -156,6 +157,20 @@ async def extract_document(
     await session.commit()  # chunks and ANALYZING become visible together
 
 
+class ScoreSignal(TypedDict):
+    score: str
+    weight: str
+    contribution: str
+
+
+class MatchScoreComponents(TypedDict, total=False):
+    scope: str
+    algorithm_version: str
+    word_tfidf: ScoreSignal
+    character_tfidf: ScoreSignal
+    word_overlap: ScoreSignal
+
+
 def create_matches(
     document_chunks: list[DocumentChunk],
     source_chunks: list[SourceChunk],
@@ -174,7 +189,7 @@ def create_matches(
             score = result.score
             if Decimal(str(score)) < analysis.similarity_threshold:
                 continue
-            components = {
+            components: MatchScoreComponents = {
                 "scope": "chunk_pair",
                 "algorithm_version": result.algorithm_version,
             }
@@ -223,10 +238,7 @@ async def analyze_document(
 ) -> None:
     if not analysis.config_snapshot:
         raise ValueError("missing_algorithm_snapshot")
-    configured = Settings(
-        _env_file=None,
-        **{**settings.model_dump(), **analysis.config_snapshot},
-    )
+    configured = Settings.model_validate({**settings.model_dump(), **analysis.config_snapshot})
     if configured.algorithm_version != settings.algorithm_version:
         raise ValueError("unsupported_algorithm_version")
     document_chunks = list(

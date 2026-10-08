@@ -33,8 +33,11 @@ TURKISH_ABBREVIATIONS = frozenset(
 class ExtractedTextPart(Protocol):
     """The common fields exposed by PDF pages and DOCX/TXT extraction results."""
 
-    text: str
-    page_number: int | None
+    @property
+    def text(self) -> str: ...
+
+    @property
+    def page_number(self) -> int | None: ...
 
 
 @dataclass(frozen=True, slots=True)

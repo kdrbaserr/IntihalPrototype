@@ -23,7 +23,7 @@ request_id: ContextVar[str | None] = ContextVar("request_id", default=None)
 logger = logging.getLogger(__name__)
 
 
-def exception_trace(error: BaseException) -> list[dict]:
+def exception_trace(error: BaseException | None) -> list[dict]:
     """Keep full frame locations and cause types without arguments, SQL or locals."""
     chain = []
     seen = set()

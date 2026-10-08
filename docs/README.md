@@ -32,6 +32,10 @@ Burada zamanla şunlar tutulacaktır:
 - yöntem, tarih, kaynaklar ve uyarı içeren yazdırılabilir görünüm (`printable-report.md`).
 - Playwright ile gerçek tarayıcı yükleme/bekleme/rapor akışı ve kapsam sınırları
   (`playwright-workflow.md`).
+- Küçük/orta/büyük belge süre ve bellek ölçümleri
+  ([8 Ekim 2026 sonuçları](document-performance-2026-10-08.md)).
+- Merge geçmişi, conflict çözümü ve backend tip kontrolü
+  ([8 Ekim 2026 incelemesi](merge-audit-2026-10-08.md)).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.

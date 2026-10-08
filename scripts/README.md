@@ -34,3 +34,19 @@ Linux/macOS:
 ```sh
 sh scripts/setup.sh
 ```
+
+## Belge süre ve bellek ölçümü
+
+Compose servisleri çalışırken proje kökünde:
+
+```powershell
+python scripts/measure-document-performance.py --output docs/measurements/YENI-KOSU.json
+```
+
+Script küçük (10 KiB), orta (100 KiB) ve büyük (1 MiB) sentetik TXT belgelerini
+üçer kez gerçek API/worker üzerinden analiz eder. Süreleri ve 100 ms aralıklarla
+API/worker belleğini JSON/CSV'ye yazar, kendi test belgelerini siler ve çıkış yapar.
+Hesap ve denetim metadatası kalır. `--repeats 1` kısa koşu içindir. Bellekte
+başlangıç, gözlenen tepe ve örnek sayısı saklanır; cgroup değeri cache'i içerir.
+Kod değişikliği/restart yapmadan çalıştırılmalıdır. Mevcut örnek kaynak havuzuyla
+elde edilen sonuçlar [ölçüm raporunda](../docs/document-performance-2026-10-08.md).

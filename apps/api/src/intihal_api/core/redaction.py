@@ -1,6 +1,7 @@
 """Fail-closed diagnostic fields and guards for libraries that can echo document text."""
 
 import logging
+from collections.abc import Mapping
 from pathlib import Path
 from uuid import UUID
 
@@ -45,7 +46,7 @@ class RouteTemplate(str):
     """Only server-defined route templates may enter diagnostics, never raw request URLs."""
 
 
-def safe_route(scope: dict) -> RouteTemplate | None:
+def safe_route(scope: Mapping[str, object]) -> RouteTemplate | None:
     path = getattr(scope.get("route"), "path", None)
     return RouteTemplate(path) if path is not None else None
 
@@ -140,7 +141,7 @@ def install_private_logging() -> None:
             redact_record(record)
             return record
 
-        private_factory._intihal_privacy = True
+        private_factory.__dict__["_intihal_privacy"] = True
         logging.setLogRecordFactory(private_factory)
     # Handler filter runs after logging's extra fields are merged into the record.
     loggers = [

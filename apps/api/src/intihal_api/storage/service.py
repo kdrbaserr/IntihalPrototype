@@ -40,7 +40,8 @@ class StorageServiceError(StorageError):
 
 
 class ObjectWriteResult(Protocol):
-    etag: str
+    @property
+    def etag(self) -> str | None: ...
 
 
 class ObjectReadResult(Protocol):
@@ -76,7 +77,7 @@ class StorageClient(Protocol):
 class StoredObject:
     bucket: str
     key: str
-    etag: str
+    etag: str | None
 
 
 class ObjectStorageService:

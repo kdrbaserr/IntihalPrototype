@@ -11,6 +11,7 @@ from intihal_api.api.analysis_schemas import (
     EvidenceResponse,
     MatchPageResponse,
     MatchResponse,
+    ScoreComponentsResponse,
     SourceEvidenceResponse,
 )
 from intihal_api.api.dependencies import CurrentUser, DatabaseSession
@@ -111,7 +112,11 @@ async def get_matches(
                 analysis_id=analysis_id,
                 method=match.method,
                 similarity_score=match.similarity_score,
-                score_components=match.score_components,
+                score_components=(
+                    ScoreComponentsResponse.model_validate(match.score_components)
+                    if match.score_components is not None
+                    else None
+                ),
                 matched_token_count=match.matched_token_count,
                 explanation=match.explanation,
                 document=EvidenceResponse(

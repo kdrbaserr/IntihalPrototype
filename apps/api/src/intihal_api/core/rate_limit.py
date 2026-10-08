@@ -27,7 +27,7 @@ async def enforce_rate_limit(
     await session.execute(
         delete(AuthenticationThrottle).where(AuthenticationThrottle.expires_at <= now)
     )
-    insert = sqlite_insert if session.bind.dialect.name == "sqlite" else postgres_insert
+    insert = sqlite_insert if session.get_bind().dialect.name == "sqlite" else postgres_insert
     # Domain-separated HMAC prevents offline guessing of email/IP from database keys.
     secret = get_settings().redis_password.get_secret_value().encode()
     counts = []
