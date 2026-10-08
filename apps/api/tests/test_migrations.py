@@ -154,9 +154,9 @@ async def insert_document_with_missing_owner(database_url: str) -> None:
                 """
                 INSERT INTO documents (
                     id, owner_id, original_filename, content_type, size_bytes,
-                    sha256, storage_bucket, storage_key
+                    sha256, storage_bucket, storage_key, expires_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now() + interval '7 days')
                 """,
                 uuid4(),
                 uuid4(),
