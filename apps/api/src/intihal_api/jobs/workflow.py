@@ -239,7 +239,12 @@ async def analyze_document(
     if not analysis.config_snapshot:
         raise ValueError("missing_algorithm_snapshot")
     configured = Settings.model_validate({**settings.model_dump(), **analysis.config_snapshot})
-    if configured.algorithm_version != settings.algorithm_version:
+    # v1/v2 share the implementation; the persisted snapshot defines their weights.
+    if configured.algorithm_version not in {
+        settings.algorithm_version,
+        "classical-hybrid-v1",
+        "classical-hybrid-v2",
+    }:
         raise ValueError("unsupported_algorithm_version")
     document_chunks = list(
         await session.scalars(

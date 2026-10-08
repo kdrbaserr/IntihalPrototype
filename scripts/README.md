@@ -72,3 +72,14 @@ Hesaplama kontrolleri:
 ```powershell
 & apps/api/.venv/Scripts/python.exe -m pytest -q scripts/tests/test_evaluate_similarity_thresholds.py
 ```
+
+## Eşik ve ağırlık kalibrasyonu
+
+```powershell
+& apps/api/.venv/Scripts/python.exe scripts/calibrate-similarity.py `
+  --output docs/measurements/YENI-KALIBRASYON.json
+```
+
+v1'in sabit etiketlerinde her ağırlığı en fazla ±0,05 değiştirerek yedi
+kombinasyonu, her biri için 101 eşiği karşılaştırır. Script yalnız rapor üretir.
+Seçim politikası ve v2 varsayılanlarının kapsamı [kalibrasyon belgesindedir](../docs/similarity-calibration-2026-10-08.md).

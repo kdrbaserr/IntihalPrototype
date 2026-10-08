@@ -1,5 +1,8 @@
 # Etiketli sette eşik etkisi — 8 Ekim 2026
 
+Bu rapor v1 ayarlarının tarihsel ölçümüdür. Güncel v2 eşik/ağırlıkları için
+[kalibrasyon raporunu](similarity-calibration-2026-10-08.md) okuyun.
+
 Set: `classical-similarity-benchmark-v1`; algoritma: `classical-hybrid-v1`.
 Çalıştırma (UTC): `2026-10-08T19:37:59.637523+00:00`; kaynak commit: `5bed47a750f75b0c9e0e0d0104571ff7e87e2895`.
 Python: `3.13.16`; ortam: `Docker Compose API Python runtime`.

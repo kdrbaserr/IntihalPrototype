@@ -37,8 +37,8 @@ def test_settings_are_loaded_from_prefixed_environment(
 def test_similarity_configuration_defaults_are_normalized() -> None:
     settings = Settings(_env_file=None)
 
-    assert settings.algorithm_version == "classical-hybrid-v1"
-    assert settings.similarity_threshold == Decimal("0.8000")
+    assert settings.algorithm_version == "classical-hybrid-v2"
+    assert settings.similarity_threshold == Decimal("0.7500")
     assert (
         settings.word_tfidf_weight + settings.character_tfidf_weight + settings.word_overlap_weight
         == Decimal("1")

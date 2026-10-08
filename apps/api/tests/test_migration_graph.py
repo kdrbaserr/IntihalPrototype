@@ -9,6 +9,6 @@ def test_single_head_includes_report_and_auth_branches():
     config = Config()
     config.set_main_option("script_location", str(Path(__file__).parents[1] / "migrations"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261008_11"]
+    assert scripts.get_heads() == ["20261008_12"]
     revisions = {revision.revision for revision in scripts.walk_revisions()}
     assert {"20261006_08", "20261007_08", "20261007_09", "20261007_10"} <= revisions

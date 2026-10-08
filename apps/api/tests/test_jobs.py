@@ -90,8 +90,12 @@ def test_invalid_worker_policies_are_rejected(overrides) -> None:
 
 def test_redis_password_is_url_encoded_and_hidden_in_settings() -> None:
     settings = Settings(
-        _env_file=None, redis_host="localhost", redis_port=6379,
-        redis_broker_db=0, redis_result_db=1, redis_password="a@b:/?#%",
+        _env_file=None,
+        redis_host="localhost",
+        redis_port=6379,
+        redis_broker_db=0,
+        redis_result_db=1,
+        redis_password="a@b:/?#%",
     )
     app = create_celery_app(settings)
     try:

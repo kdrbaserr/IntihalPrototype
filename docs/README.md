@@ -38,6 +38,8 @@ Burada zamanla şunlar tutulacaktır:
   ([8 Ekim 2026 incelemesi](merge-audit-2026-10-08.md)).
 - Etiketli regresyon setinde eşiklerin precision/recall ve yanlış karar etkisi
   ([8 Ekim 2026 raporu](threshold-effects-2026-10-08.md)).
+- Ölçüme dayalı v2 eşik/ağırlık ayarları ve eski snapshot uyumluluğu
+  ([8 Ekim 2026 kalibrasyonu](similarity-calibration-2026-10-08.md)).
 - CI bağımlılık, container ve secret kontrolleri
   ([8 Ekim 2026 tarama sonuçları](security-ci-2026-10-08.md)).
 

@@ -121,8 +121,8 @@ def test_matches_include_paginated_evidence_and_correct_global_offsets():
                 assert components["algorithm_version"] == analysis.algorithm_version
                 for signal, weight in (
                     ("word_tfidf", "0.50"),
-                    ("character_tfidf", "0.30"),
-                    ("word_overlap", "0.20"),
+                    ("character_tfidf", "0.25"),
+                    ("word_overlap", "0.25"),
                 ):
                     assert Decimal(components[signal]["score"]) == 1
                     assert Decimal(components[signal]["weight"]) == Decimal(weight)

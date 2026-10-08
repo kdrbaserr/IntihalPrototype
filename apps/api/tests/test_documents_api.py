@@ -133,8 +133,10 @@ async def test_document_endpoints_enforce_ownership(
     try:
         await seed_users(session_factory)
         async with session_factory() as session:
-            identities = {user_id: await session_headers(session, user_id) for user_id in
-                          [ACTIVE_USER_ID, OTHER_USER_ID, DISABLED_USER_ID]}
+            identities = {
+                user_id: await session_headers(session, user_id)
+                for user_id in [ACTIVE_USER_ID, OTHER_USER_ID, DISABLED_USER_ID]
+            }
         async with application.router.lifespan_context(application):
             transport = ASGITransport(app=application)
             async with AsyncClient(transport=transport, base_url="http://testserver") as client:
