@@ -50,3 +50,25 @@ Hesap ve denetim metadatası kalır. `--repeats 1` kısa koşu içindir. Bellekt
 başlangıç, gözlenen tepe ve örnek sayısı saklanır; cgroup değeri cache'i içerir.
 Kod değişikliği/restart yapmadan çalıştırılmalıdır. Mevcut örnek kaynak havuzuyla
 elde edilen sonuçlar [ölçüm raporunda](../docs/document-performance-2026-10-08.md).
+
+## Etiketli sette eşik değerlendirmesi
+
+Proje kökünde API sanal ortamıyla:
+
+```powershell
+& apps/api/.venv/Scripts/python.exe scripts/evaluate-similarity-thresholds.py `
+  --revision (git rev-parse HEAD) --output docs/measurements/YENI-ESIK-KOSUSU `
+  --report docs/YENI-ESIK-RAPORU.md
+```
+
+`benchmark-v1.json` içindeki dört çift gerçek hibrit algoritmayla yeniden skorlanır.
+Sabit regresyon etiketleriyle 0–1 taraması ve kritik sınırlarda TP/FP/FN/TN,
+precision, recall, F1, specificity ve accuracy JSON/CSV/Markdown'a yazılır.
+Üretim ayarları değiştirilmez. Bu küçük sentetik set saha başarısı veya optimum
+eşik kanıtı değildir. [Kaydedilen rapor](../docs/threshold-effects-2026-10-08.md).
+
+Hesaplama kontrolleri:
+
+```powershell
+& apps/api/.venv/Scripts/python.exe -m pytest -q scripts/tests/test_evaluate_similarity_thresholds.py
+```

@@ -36,6 +36,8 @@ Burada zamanla şunlar tutulacaktır:
   ([8 Ekim 2026 sonuçları](document-performance-2026-10-08.md)).
 - Merge geçmişi, conflict çözümü ve backend tip kontrolü
   ([8 Ekim 2026 incelemesi](merge-audit-2026-10-08.md)).
+- Etiketli regresyon setinde eşiklerin precision/recall ve yanlış karar etkisi
+  ([8 Ekim 2026 raporu](threshold-effects-2026-10-08.md)).
 
 Kodun ne yaptığını yalnız koddan tahmin etmek yerine önemli kararları burada
 açıkça kaydedeceğiz.
