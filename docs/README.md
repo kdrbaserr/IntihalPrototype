@@ -9,6 +9,9 @@ Son gözden geçirme: **8 Ekim 2026**. Güncel profil v2; migration head `202610
 | Veri saklama ve silme | [Veri politikası](data-policy.md) |
 | Açık riskler | [Risk kaydı](risks.md) |
 | Bilinen sınırlar | [Kapsam ve sınırlar](known-limitations.md) |
+| Sürüm geçmişi | [Changelog](../CHANGELOG.md) |
+| v0.1.0 sürüm adayı | [Sürüm notu](releases/v0.1.0.md) |
+| Demo dosyaları ve senaryolar | [Sentetik demo paketi](../demo/v0.1.0/README.md) |
 
 Bu klasör teknik ve operasyonel belgeleri, tarihli ölçümleri ve politika kararlarını içerir.
 

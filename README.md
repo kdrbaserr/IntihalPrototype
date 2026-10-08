@@ -82,3 +82,5 @@ altyapı portları ve açık güvenlik bulguları vardır. Üretime hazır dağ�
 | Algoritma, belge ve ölçüm sınırları | [Bilinen sınırlar](docs/known-limitations.md) |
 | Lisans ve izin kararları | [Kaynak edinme politikası](docs/source-acquisition-policy.md) |
 | Ölçümler ve ayrıntılı teknik notlar | [Dokümantasyon dizini](docs/README.md) |
+| Sürüm geçmişi ve v0.1.0 adayı | [Changelog](CHANGELOG.md), [sürüm notu](docs/releases/v0.1.0.md) |
+| Demo dosyaları ve kullanım | [Sentetik demo paketi](demo/v0.1.0/README.md) |

@@ -13,6 +13,17 @@ barındıracaktır.
 
 Uygulamanın asıl iş mantığı bu klasöre konulmayacaktır.
 
+## Sürüm demo paketini üretme
+
+```powershell
+& apps/api/.venv/Scripts/python.exe scripts/export-demo-data.py
+```
+
+Yedi sentetik TXT/PDF/DOCX dosyası, kaynak izin metadatası/checksum manifesti ve
+yerel çıkarma/skorlama doğrulamasını `demo/v0.1.0/` altında üretir. Mevcut paket
+dosyalarını yeniden yazar; hesap, DB veya MinIO'ya dokunmaz. Ayrı çıktı klasörü
+için `--output output/demo` kullanılabilir. [Demo akışı](../demo/v0.1.0/README.md).
+
 ## Tek komutla yerel kurulum
 
 - `setup.ps1`: Windows/PowerShell kurulumu

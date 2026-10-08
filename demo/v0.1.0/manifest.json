@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "release": "v0.1.0",
+  "synthetic_corpus_version": "v1",
+  "algorithm_version": "classical-hybrid-v2",
+  "similarity_threshold": "0.7500",
+  "weights": {
+    "word_tfidf": "0.50",
+    "character_tfidf": "0.25",
+    "word_overlap": "0.25"
+  },
+  "license": "CC0-1.0",
+  "files": [
+    {
+      "path": "sources/akademik-kaynak-gosterme.txt",
+      "size_bytes": 311,
+      "sha256": "a140482072a95f32641953cc0ce9f6772ecf6b7ffb4d9261ec178fe29d728984",
+      "role": "source",
+      "content_type": "text/plain",
+      "source_metadata": {
+        "title": "Akademik Yazımda Kaynak Gösterme",
+        "license_name": "CC0-1.0",
+        "rights_holder": "İntihal Prototype sentetik veri üreticisi",
+        "license_evidence_reference": "SYNTHETIC-CORPUS-v1/akademik-kaynak-gosterme",
+        "author": "İntihal Prototype",
+        "publisher": "Yerel geliştirme örnek havuzu",
+        "source_url": "urn:intihal-prototype:synthetic:v1:akademik-kaynak-gosterme",
+        "license_url": null,
+        "attribution_text": "Akademik Yazımda Kaynak Gösterme — sentetik geliştirme verisi.",
+        "license_valid_from": null,
+        "license_valid_until": null
+      }
+    },
+    {
+      "path": "documents/exact-akademik-kaynak-gosterme.txt",
+      "size_bytes": 311,
+      "sha256": "a140482072a95f32641953cc0ce9f6772ecf6b7ffb4d9261ec178fe29d728984",
+      "role": "user_document",
+      "content_type": "text/plain",
+      "expected": "match",
+      "source": "sources/akademik-kaynak-gosterme.txt"
+    },
+    {
+      "path": "sources/veri-butunlugu.pdf",
+      "size_bytes": 1345,
+      "sha256": "4d1458336966d64b8e1694ec6bd436667fe528bf79214bd29f628e0956a4e542",
+      "role": "source",
+      "content_type": "application/pdf",
+      "source_metadata": {
+        "title": "Veri Bütünlüğü ve Denetim İzleri",
+        "license_name": "CC0-1.0",
+        "rights_holder": "İntihal Prototype sentetik veri üreticisi",
+        "license_evidence_reference": "SYNTHETIC-CORPUS-v1/veri-butunlugu",
+        "author": "İntihal Prototype",
+        "publisher": "Yerel geliştirme örnek havuzu",
+        "source_url": "urn:intihal-prototype:synthetic:v1:veri-butunlugu",
+        "license_url": null,
+        "attribution_text": "Veri Bütünlüğü ve Denetim İzleri — sentetik geliştirme verisi.",
+        "license_valid_from": null,
+        "license_valid_until": null
+      }
+    },
+    {
+      "path": "documents/exact-veri-butunlugu.pdf",
+      "size_bytes": 1345,
+      "sha256": "4d1458336966d64b8e1694ec6bd436667fe528bf79214bd29f628e0956a4e542",
+      "role": "user_document",
+      "content_type": "application/pdf",
+      "expected": "match",
+      "source": "sources/veri-butunlugu.pdf"
+    },
+    {
+      "path": "sources/tekrarlanabilir-arastirma.docx",
+      "size_bytes": 35623,
+      "sha256": "b82fc0053426e7af526eb7e1ac88b26f8654542cd9c02eabd1b0299315d23905",
+      "role": "source",
+      "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "source_metadata": {
+        "title": "Araştırmada Tekrarlanabilirlik",
+        "license_name": "CC0-1.0",
+        "rights_holder": "İntihal Prototype sentetik veri üreticisi",
+        "license_evidence_reference": "SYNTHETIC-CORPUS-v1/tekrarlanabilir-arastirma",
+        "author": "İntihal Prototype",
+        "publisher": "Yerel geliştirme örnek havuzu",
+        "source_url": "urn:intihal-prototype:synthetic:v1:tekrarlanabilir-arastirma",
+        "license_url": null,
+        "attribution_text": "Araştırmada Tekrarlanabilirlik — sentetik geliştirme verisi.",
+        "license_valid_from": null,
+        "license_valid_until": null
+      }
+    },
+    {
+      "path": "documents/exact-tekrarlanabilir-arastirma.docx",
+      "size_bytes": 35623,
+      "sha256": "b82fc0053426e7af526eb7e1ac88b26f8654542cd9c02eabd1b0299315d23905",
+      "role": "user_document",
+      "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "expected": "match",
+      "source": "sources/tekrarlanabilir-arastirma.docx"
+    },
+    {
+      "path": "documents/unrelated.txt",
+      "size_bytes": 202,
+      "sha256": "a187e2a9b18266dfa24efe40c3f0b40b77c66b6e980105ef47cbdea109f2cb35",
+      "role": "user_document",
+      "content_type": "text/plain",
+      "expected": "no_match"
+    }
+  ]
+}
